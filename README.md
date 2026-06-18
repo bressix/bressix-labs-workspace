@@ -4,99 +4,134 @@
 
 # bressix-labs-workspace
 
-> ⚠️ **WORK IN PROGRESS / EM CONSTRUÇÃO**
+> Engineering Research & Development Laboratory
 >
-> **EN:** This workspace is currently undergoing structural setup. Repository architecture, documentation, and security sanitization are being pushed incrementally as time permits. Code modules will be available soon.
-> 
-> **PT-BR:** Este workspace está em fase de estruturação inicial. A arquitetura dos repositórios, documentação e a higienização de segurança estão sendo subidas gradualmente conforme disponibilidade de tempo. Os módulos de código estarão disponíveis em breve.
+> Laboratório de Pesquisa e Desenvolvimento em Engenharia
 
-<details>
-<summary>🇺🇸 English Version (Click to expand)</summary>
-
-Centralized development workspace for **bressix LABs**. This repository unifies our core operational modules, automation scripts, device modifications, and hardware laboratory environments organized by engineering disciplines.
-
-## Workspace Structure
-
-* ### [3D/](./3D/)
-    Mechanical designs, structural enclosures, parametric modeling using OpenSCAD and FreeCAD, and functional 3D printing assets.
-* ### [audio/](./audio/)
-    Audio studies — Digital Signal Processing (DSP), DACs, advanced sound server routing (PipeWire/ALSA), audio hardware patches, acoustic tuning, enclosures, drivers, and crossover networks.
-* ### [firmware/](./firmware/)
-    Pure microcontroller software and low-level logical development (CH552, ESP32, AVR, etc.).
-    * `bressix-DIV/`: Adaptation of BruceFirmware leveraging the hardware capabilities of the ESP32-DIV (cifertech).
-    * `diy-mood-weather/`: Telemetry firmware for local environment and atmospheric nodes.
-    * `esp32-cftv-tool/`: Utility firmware for network diagnosis and CCTV deployment support.
-    * `pid-temp-arduino/`: Closed-loop Proportional-Integral-Derivative thermal controller.
-* ### [hardware/](./hardware/)
-    Schematics, pinout layouts, I2C/SPI bus mapping, and raw hardware architecture specs.
-    * `bressix-DIV/`: Hardware redesign and analysis of the ESP32-DIV (cifertech).
-    * `diy-mood-weather/`: Board schematics and sensor bus layouts for telemetry and local environmental nodes.
-    * `esp32-cftv-tool/`: Hardware schematics and pinout design for network diagnosis and CCTV deployment support.
-    * `pid-temp-arduino/`: Shield layout and pin mapping for the closed-loop PID thermal controller.
-* ### [system-hacking-n-tuning/](./system-hacking-n-tuning/)
-    OS deep tuning, embedded Linux customization, bootloader modifications, kernels, and driver patches.
-    * `chromebook4-samsung/`: Debian Stable performance optimizations, zRAM fine-tuning, and stable desktop environment setup.
-    * `pineapple-termidor-mod/`: Custom system images based on wifi-pineapple-cloner (xchwarze) tailored to run on a TP-Link TL-WDR4300 (N750).
-    * `positivo-duo-q432a/`: OS-level automation scripts for native hardware sensor and accelerometer integration.
-* ### [tls-n-automation-scripts/](./tls-n-automation-scripts/)
-    Infrastructure automation, advanced cryptographic utilities, PKI management, and automated corporate data auditing.
-    * `cnpj_query/`: Resilient local CNPJ validation and multi-API fallback parsing tool ecosystem.
-    * `globalsign-atlas-api/`: Backend integration modules for GlobalSign's modern Atlas API ecosystem.
-    * `globalsign-gcc-api/`: Integration scripts and logic interacting with GlobalSign's legacy GCC API.
-    * `ssl-tls-auditing/`: Advanced ciphersuite scanning, validation chain compliance, and verification scripts.
-    * `tls-crt/`: Toolsets for manipulating, extracting, validating, and converting X.509 certificates and keys.
-    * `tls-discovery/`: Automation routines for network-wide TLS/SSL credential scanning and asset identification.
-    * `tls-scripts/`: Core cryptographic helpers, validation triggers, and tactical infrastructure playbooks.
-* ### [WIP/](./WIP/)
-    Generic playground for experimental work in progress, memory dumps, raw reversing notes, and unclassified test scripts.
+![Environment](https://img.shields.io/badge/Environment-Parrot%20OS%20%7C%20Linux-blueviolet)
+![License](https://img.shields.io/badge/License-GPLv3-green)
+![Status](https://img.shields.io/badge/Workspace-Active%20Research-orange)
+![Security](https://img.shields.io/badge/Security-Sanitized-success)
 
 ---
-</details>
 
-<details>
-<summary>🇧🇷 Versão em Português (Clique para expandir)</summary>
+## ⚠️ PROOF OF CONCEPT / EM DESENVOLVIMENTO
 
-Workspace centralizado de desenvolvimento da **bressix LABs**. Este repositório unifica nossos módulos operacionais, scripts de automação, modificações de sistemas e laboratórios de engenharia organizados de forma modular por disciplinas tecnológicas.
+### English
 
-## Estrutura do Workspace
+This workspace acts as a centralized monorepo containing **experimental software, embedded prototypes, firmware source trees, hardware designs, and Proof of Concept (PoC) implementations** under active evolution by **bressix LABs**.
 
-* ### [3D/](./3D/)
-    Designs mecânicos, cases estruturais, modelagens parametrizadas em OpenSCAD e FreeCAD e peças para impressão 3D funcional.
-* ### [audio/](./audio/)
-    Estudo do áudio - Processamento digital de sinal (DSP), DAC, roteamento avançado de servidores de som (PipeWire/ALSA), patches para hardware de áudio, tunagem acústica, caixas, drivers e divisores de frequência.
-* ### [firmware/](./firmware/)
-    Códigos nativos para microcontroladores e desenvolvimento lógico de baixo nível (CH552, ESP32, AVR, etc.).
-    * `bressix-DIV/`: Adaptação do BruceFirmware para utilizar o poder de hardware do ESP32-DIV (cifertech).
-    * `diy-mood-weather/`: Firmware de telemetria e gerenciamento de nodes ambientais locais.
-    * `esp32-cftv-tool/`: Firmware utilitário para diagnóstico de redes e apoio à infraestrutura de CFTV.
-    * `pid-temp-arduino/`: Controlador térmico em malha fechada utilizando algoritmo Proporcional-Integral-Derivativo.
-* ### [hardware/](./hardware/)
-    Esquemas elétricos, diagramas de pinagem, mapeamento de barramentos (I2C/SPI) e especificações físicas de placas.
-    * `bressix-DIV/`: Releitura do hardware do ESP32-DIV (cifertech).
-    * `diy-mood-weather/`: Hardware de telemetria e pinagem de barramentos de sensores do node ambiental local.
-    * `esp32-cftv-tool/`: Hardware utilitário para diagnóstico de redes e apoio à infraestrutura de CFTV.
-    * `pid-temp-arduino/`: Esquema de conexões e mapeamento de pinos do controlador térmico em malha fechada PID.
-* ### [system-hacking-n-tuning/](./system-hacking-n-tuning/)
-    Modificações profundas de sistemas operacionais, customização de firmwares baseados em Linux, kernels e patches de drivers.
-    * `chromebook4-samsung/`: Otimizações de desempenho para Debian Stable, ajustes finos de zRAM e setup de ambiente gráfico estável.
-    * `pineapple-termidor-mod/`: Imagens customizadas com base wifi-pineapple-cloner (xchwarze) para rodar em um TP-Link TL-WDR4300 (N750).
-    * `positivo-duo-q432a/`: Automações em nível de sistema para tratamento nativo de sensores e acelerômetro do hardware.
-* ### [tls-n-automation-scripts/](./tls-n-automation-scripts/)
-    Automações de infraestrutura, utilitários criptográficos avançados, gerenciamento de PKI e auditoria automatizada de dados corporativos.
-    * `cnpj_query/`: Ecossistema do consultador resiliente com validação algorítmica local e fallback inteligente de APIs.
-    * `globalsign-atlas-api/`: Módulos de integração e consumo estruturado da API moderna Atlas da GlobalSign.
-    * `globalsign-gcc-api/`: Scripts de integração com as APIs legadas do sistema GCC da GlobalSign.
-    * `ssl-tls-auditing/`: Varredura avançada de ciphersuites, checagem de cadeias de certificação e scripts de compliance.
-    * `tls-crt/`: Utilitários para manipulação, extração, validação e conversão de chaves e certificados X.509.
-    * `tls-discovery/`: Rotinas de automação para varredura de ativos e descoberta de credenciais TLS/SSL na rede.
-    * `tls-scripts/`: Auxiliares criptográficos centrais, gatilhos de validação e playbooks táticos de infraestrutura.
-* ### [WIP/](./WIP/)
-    Laboratório genérico para projetos em andamento (Work In Progress), dumps de memórias, rascunhos rápidos e testes não classificados.
+The contents within this repository are structured for:
+
+* Technical research, prototyping, and security auditing.
+* Reference implementations and hardware-software integration tests.
+* Academic, laboratory, and internal benchmarking logic.
+
+Unless explicitly documented otherwise inside specific subdirectories, **no asset within this workspace should be assumed to be a production-ready product**.
+
+Architectures, pinning configurations, schemas, interfaces, APIs, and logic are subject to breaking changes without notice.
+
+### Português
+
+Este workspace atua como um monorepo centralizado contendo **software experimental, protótipos embarcados, árvores de firmware, designs de hardware e implementações de Prova de Conceito (PoC)** em evolução ativa pela **bressix LABs**.
+
+O conteúdo deste repositório é estruturado para:
+
+* Pesquisa técnica, prototipagem e auditorias de segurança.
+* Implementações de referência e testes de integração hardware-software.
+* Lógica acadêmica, laboratorial e benchmarks internos.
+
+Salvo indicação explícita em contrário dentro de subdiretórios específicos, **nenhum ativo neste workspace deve ser considerado um produto pronto para produção**.
+
+Arquiteturas, configurações de pinagem, esquemas, interfaces, APIs e lógicas estão sujeitos a alterações sem aviso prévio.
 
 ---
-</details>
 
-## Security Policy / Política de Segurança
-No private keys, production certificates, passwords, or active API tokens are stored within this repository. Local development environments must rely on `.env` files or isolated header files built from the provided `*.example` configurations.
+## ⚖️ DISCLAIMER / ISENÇÃO DE RESPONSABILIDADE
 
-*Nenhuma chave privada, certificado de produção, senhas ou tokens ativos de API são armazenados neste repositório. Ambientes locais de desenvolvimento devem utilizar arquivos `.env` ou headers isolados baseados nas estruturas de exemplo `*.example` fornecidas.*
+### English
+
+**NO WARRANTY**
+
+THIS WORKSPACE AND ALL CONTAINED SOFTWARE, FIRMWARE, HARDWARE DESIGNS, SCHEMATICS, AND OTHER ASSETS ARE PROVIDED **"AS IS"**, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, SECURITY, FUNCTIONALITY, RELIABILITY, OR HARDWARE SAFETY.
+
+THE AUTHORS, CONTRIBUTORS, AND COPYRIGHT HOLDERS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGE, LOSS OF DATA, DEVICE BRICKING, HARDWARE FAILURE, SECURITY INCIDENT, SERVICE INTERRUPTION, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE, FIRMWARE, HARDWARE DESIGNS, SCHEMATICS, OR THEIR USE.
+
+OPERATING, COMPILING, FLASHING, MODIFYING, OR DEPLOYING ANY CODE OR DESIGN FROM THIS REPOSITORY IS ENTIRELY AT YOUR OWN RISK.
+
+### Português
+
+**SEM GARANTIAS**
+
+ESTE WORKSPACE E TODOS OS SOFTWARES, FIRMWARES, PROJETOS DE HARDWARE, ESQUEMÁTICOS E DEMAIS ATIVOS CONTIDOS SÃO FORNECIDOS **"NO ESTADO EM QUE SE ENCONTRAM"**, SEM GARANTIAS DE QUALQUER NATUREZA, EXPRESSAS OU IMPLÍCITAS, INCLUINDO, MAS NÃO SE LIMITANDO A, GARANTIAS DE COMERCIALIZAÇÃO, ADEQUAÇÃO A UMA FINALIDADE ESPECÍFICA, NÃO VIOLAÇÃO, SEGURANÇA, FUNCIONALIDADE, CONFIABILIDADE OU INTEGRIDADE FÍSICA DO HARDWARE.
+
+OS AUTORES, COLABORADORES E DETENTORES DOS DIREITOS AUTORAIS NÃO PODERÃO SER RESPONSABILIZADOS POR QUAISQUER RECLAMAÇÕES, DANOS, PERDA DE DADOS, INUTILIZAÇÃO DE DISPOSITIVOS (DEVICE BRICKING), FALHAS DE HARDWARE, INCIDENTES DE SEGURANÇA, INTERRUPÇÕES DE SERVIÇO OU OUTRAS RESPONSABILIDADES DECORRENTES DO USO, MAU USO OU IMPOSSIBILIDADE DE USO DESTES SOFTWARES, FIRMWARES, PROJETOS DE HARDWARE OU ESQUEMÁTICOS.
+
+A EXECUÇÃO, COMPILAÇÃO, GRAVAÇÃO (FLASHING), MODIFICAÇÃO OU IMPLANTAÇÃO DE QUALQUER CÓDIGO OU DESIGN DESTE REPOSITÓRIO É DE INTEIRA RESPONSABILIDADE DO USUÁRIO.
+
+---
+
+## 🔐 SECURITY NOTICE / AVISO DE SEGURANÇA
+
+### English
+
+No private keys, cryptographic seeds, production certificates, active service tokens, customer credentials, or confidential corporate information are tracked within this repository.
+
+All development workflows rely on repository sanitization practices, strict `.gitignore` policies, and isolated local environments.
+
+Local engineering work should rely on detached configuration files, environment variables, or `.env` templates that are never committed to version control.
+
+### Português
+
+Nenhuma chave privada, semente criptográfica, certificado de produção, token ativo de serviço, credencial de cliente ou informação corporativa confidencial é rastreada dentro deste repositório.
+
+Todos os fluxos de desenvolvimento utilizam práticas de higienização de repositório, políticas rígidas de `.gitignore` e ambientes locais isolados.
+
+Trabalhos locais de engenharia devem utilizar arquivos de configuração desacoplados, variáveis de ambiente ou templates `.env` que nunca sejam enviados ao controle de versão.
+
+---
+
+## 🎯 Mission Statement
+
+### English
+
+bressix LABs is an independent engineering laboratory focused on hardware development, embedded systems, Linux customization, information security, PKI automation, infrastructure tooling, and applied research.
+
+The objective is to document experiments, preserve technical knowledge, and share reference implementations that may be useful to the broader engineering community.
+
+### Português
+
+A bressix LABs é um laboratório independente de engenharia focado em desenvolvimento de hardware, sistemas embarcados, customização Linux, segurança da informação, automação PKI, ferramentas de infraestrutura e pesquisa aplicada.
+
+O objetivo é documentar experimentos, preservar conhecimento técnico e compartilhar implementações de referência que possam ser úteis para a comunidade de engenharia.
+
+---
+
+## 🗂️ Workspace Architecture / Estrutura do Repositório
+
+```text
+bressix-labs-workspace/
+├── 3D/                        # Functional 3D modeling and mechanical CAD assets.
+├── audio/                     # Audio engineering, DSP experiments, and acoustic studies.
+├── firmware/                  # Embedded firmware development (ESP32, CH552, AVR, RP2350).
+├── hardware/                  # Schematics, PCB layouts, hardware analysis, and pin mapping.
+├── system-hacking-n-tuning/   # Linux customization, system tuning, drivers, and platform optimization.
+├── tls-n-automation-scripts/  # PKI tooling, infrastructure utilities, automation scripts, and API integrations.
+│   ├── cnpj_query/            # Resilient multi-provider CNPJ acquisition engine.
+│   ├── globalsign-atlas-api/  # Atlas API integration modules.
+│   ├── globalsign-gcc-api/    # Legacy GCC API integration modules.
+│   ├── ssl-tls-auditing/      # TLS auditing and compliance validation tools.
+│   ├── tls-crt/               # X.509 certificate manipulation utilities.
+│   ├── tls-discovery/         # TLS asset discovery and inventory automation.
+│   └── tls-scripts/           # Core cryptographic and infrastructure helper scripts.
+└── WIP/                       # Experimental and unclassified development sandbox.
+```
+
+---
+
+## License
+
+GNU General Public License v3.0 (GPL-3.0)
+
+Copyright (C) 2026 bressix LABs
+
