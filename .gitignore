@@ -1,0 +1,57 @@
+# ==============================================================================
+# bressix LABs Workspace - Global GitIgnore
+# ==============================================================================
+
+# --- Segredos e Credenciais (CRÍTICO) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.csr
+secrets.*
+config.h
+!config.h.example
+
+# --- Python (crypto-security / automações) ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+dist/
+build/
+*.egg-info/
+
+# --- Embarcados e C++ (embedded-hardware / firmware) ---
+.pio/
+.platformio/
+build/
+out/
+Release/
+Debug/
+*.hex
+*.bin
+*.elf
+*.o
+*.a
+*.la
+*.lo
+
+# --- Sistema Operacional e IDEs ---
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# --- Logs e Tráfego (Auditorias) ---
+*.log
+*.pcap
+*.cap
