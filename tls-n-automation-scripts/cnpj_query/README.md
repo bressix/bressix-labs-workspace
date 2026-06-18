@@ -6,15 +6,72 @@
 
 > Resilient CNPJ Lookup Engine
 >
-> Validação algorítmica local, consulta resiliente e enriquecimento corporativo através de múltiplas fontes de dados.
+> Validação algorítmica local, consulta resiliente, enriquecimento corporativo e processamento em lote utilizando múltiplas fontes públicas de dados.
+
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![License](https://img.shields.io/badge/License-GPLv3-green)
+![Status](https://img.shields.io/badge/Status-Active%20Development-orange)
+![API](https://img.shields.io/badge/API-Multi--Provider-red)
 
 ---
 
-## ⚠️ WORK IN PROGRESS / EM CONSTRUÇÃO
+## ⚠️ PROOF OF CONCEPT / EM DESENVOLVIMENTO
 
-**EN:** New providers, normalization layers, response adapters, local cache engines and export modules are continuously being integrated.
+### English
 
-**PT-BR:** Novos provedores, camadas de normalização, adaptadores de resposta, mecanismos de cache local e módulos de exportação estão sendo incorporados continuamente.
+This repository contains experimental software, research artifacts, and Proof of Concept (PoC) implementations developed as part of the **bressix LABs** ecosystem.
+
+The project is intended for research, technical validation, experimentation, and reference implementations.
+
+This repository must not be considered production-ready software.
+
+Features, interfaces, APIs, and behaviors may change without notice.
+
+### Português
+
+Este repositório contém software experimental, artefatos de pesquisa e implementações de Prova de Conceito (PoC) desenvolvidos como parte do ecossistema **bressix LABs**.
+
+O projeto é destinado à pesquisa, validação técnica, experimentação e implementações de referência.
+
+Este repositório não deve ser considerado software pronto para produção.
+
+Funcionalidades, interfaces, APIs e comportamentos podem ser alterados sem aviso prévio.
+
+---
+
+## ⚖️ DISCLAIMER / ISENÇÃO DE RESPONSABILIDADE
+
+### English
+
+**NO WARRANTY**
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+THE AUTHORS, CONTRIBUTORS, AND COPYRIGHT HOLDERS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGE, LOSS OF DATA, SECURITY INCIDENT, SERVICE INTERRUPTION, OR OTHER LIABILITY ARISING FROM THE USE OR MISUSE OF THIS SOFTWARE.
+
+USE OF THIS SOFTWARE IS ENTIRELY AT YOUR OWN RISK.
+
+### Português
+
+**SEM GARANTIAS**
+
+ESTE SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIAS DE QUALQUER NATUREZA.
+
+OS AUTORES, COLABORADORES E DETENTORES DOS DIREITOS AUTORAIS NÃO PODERÃO SER RESPONSABILIZADOS POR DANOS, PERDA DE DADOS, INCIDENTES DE SEGURANÇA OU OUTRAS RESPONSABILIDADES DECORRENTES DO USO OU MAU USO DESTE SOFTWARE.
+
+A UTILIZAÇÃO DESTE SOFTWARE É DE INTEIRA RESPONSABILIDADE DO USUÁRIO.
+
+---
+
+## 🔐 SECURITY NOTICE / AVISO DE SEGURANÇA
+
+### English
+
+No private keys, production certificates, active API tokens, passwords, customer information, or confidential corporate data are intentionally stored within this repository.
+
+### Português
+
+Nenhuma chave privada, certificado de produção, token ativo de API, senha, dado de cliente ou informação corporativa confidencial é armazenada intencionalmente neste repositório.
 
 ---
 
@@ -23,25 +80,38 @@
 
 ## Overview
 
-cnpj_query is a resilient corporate information retrieval engine designed to perform Brazilian CNPJ validation and company data acquisition using multiple public data providers.
+**cnpj_query** is a resilient corporate information retrieval engine designed to validate Brazilian CNPJ identifiers locally and retrieve company information from multiple public providers.
 
-Unlike traditional single-source implementations, the project validates CNPJ identifiers locally before consuming network resources and automatically switches between providers when incomplete datasets, service outages or rate limits are encountered.
-
-The architecture was originally developed to support PKI operations, TLS certificate issuance workflows, compliance validation routines and corporate onboarding processes.
+The engine minimizes unnecessary network traffic through mathematical validation and automatically enriches returned data using multiple data sources when required.
 
 ---
 
-## Core Capabilities
+## Features
 
-* Mathematical CNPJ validation performed locally.
-* Multi-provider architecture.
-* Intelligent API fallback mechanism.
-* Automatic data enrichment across providers.
-* Structured JSON data export.
-* Batch processing support.
-* Exponential backoff handling for HTTP 429 responses.
-* Custom User-Agent implementation following API consumption best practices.
-* Resilient operation under provider degradation scenarios.
+* Local mathematical CNPJ validation
+* Multi-provider architecture
+* Intelligent fallback mechanism
+* Automatic data enrichment
+* Batch processing support
+* JSON export support
+* HTTP 429 exponential backoff
+* Custom User-Agent
+* Pure Python implementation
+* No external dependencies
+
+---
+
+## Supported Providers
+
+### Primary Provider
+
+* MinhaReceita
+
+### Secondary Provider
+
+* PublicaCNPJ
+
+Returned datasets are automatically evaluated and merged when enrichment opportunities are detected.
 
 ---
 
@@ -51,107 +121,69 @@ The architecture was originally developed to support PKI operations, TLS certifi
 Input CNPJ
      │
      ▼
-Local Mathematical Validation
+Local Validation
      │
      ▼
-Primary Provider (MinhaReceita)
+MinhaReceita
      │
      ▼
 Response Evaluation
      │
      ▼
-Secondary Provider (PublicaCNPJ)
+PublicaCNPJ Fallback
      │
      ▼
-Data Enrichment & Merge
+Data Enrichment
      │
      ▼
 Structured Output
 ```
 
----
+## Usage
 
-## Main Features
-
-### Local Validation Layer
-
-Performs full CNPJ verification digit validation before any network communication occurs.
-
-Benefits:
-
-* Reduces unnecessary API consumption.
-* Eliminates invalid requests.
-* Improves overall performance.
-
-### Intelligent Provider Fallback
-
-Primary source:
-
-* MinhaReceita
-
-Fallback source:
-
-* PublicaCNPJ
-
-If critical contact fields are missing or unavailable, the engine automatically attempts enrichment using secondary providers.
-
-### Batch Processing
-
-Supports large-scale consultation operations using text files containing one CNPJ per line.
-
-Capabilities:
-
-* Automatic delay management.
-* Success/failure tracking.
-* Consolidated JSON export.
-* Invalid CNPJ filtering.
-
-### Network Resilience
-
-Implemented mechanisms include:
-
-* HTTP error classification.
-* Exponential retry strategy.
-* Rate-limit mitigation.
-* Timeout controls.
-* Graceful failure handling.
-
----
-
-## Example Usage
-
-Single query:
+Single lookup:
 
 ```bash
 ./cnpj_query.py 53020152000112
 ```
 
-Batch mode:
+Help:
+
+```bash
+./cnpj_query.py --help
+```
+
+## Batch Mode
+
+Input file:
+
+```text
+53020152000112
+12.345.678/0001-99
+```
+
+Execution:
 
 ```bash
 ./cnpj_query.py --lote empresas.txt
 ```
 
-Batch mode with JSON export:
+JSON export:
 
 ```bash
-./cnpj_query.py --lote empresas.txt --json resultado.json
+./cnpj_query.py --lote empresas.txt --json resultados.json
 ```
 
 ---
 
-## Potential Applications
+## Typical Applications
 
-* PKI customer verification.
-* TLS/SSL certificate enrollment.
-* CRM enrichment.
-* Corporate onboarding.
-* Compliance validation.
-* Business intelligence workflows.
-* Infrastructure asset correlation.
-* Corporate data auditing.
-
----
+* PKI customer validation
+* TLS enrollment workflows
+* Corporate onboarding
+* CRM enrichment
+* Compliance validation
+* Business intelligence pipelines
 
 </details>
 
@@ -160,25 +192,38 @@ Batch mode with JSON export:
 
 ## Visão Geral
 
-O cnpj_query é um mecanismo resiliente para consulta e validação de dados corporativos brasileiros utilizando múltiplas fontes públicas de informação.
+O **cnpj_query** é um mecanismo resiliente para consulta e validação de dados corporativos brasileiros utilizando múltiplas fontes públicas de informação.
 
-Diferentemente de implementações dependentes de um único provedor, o projeto realiza validação matemática local do CNPJ antes do consumo de recursos de rede e alterna automaticamente entre provedores quando encontra indisponibilidades, limitações ou respostas incompletas.
-
-A arquitetura foi originalmente desenvolvida para apoiar operações de PKI, emissão de certificados digitais, validações de compliance e processos corporativos de onboarding.
+O sistema realiza validação matemática local antes de qualquer consulta externa e utiliza enriquecimento inteligente de dados através de múltiplos provedores.
 
 ---
 
-## Capacidades Principais
+## Funcionalidades
 
-* Validação matemática local de CNPJ.
-* Arquitetura multi-provedor.
-* Mecanismo inteligente de fallback.
-* Enriquecimento automático de dados.
-* Exportação estruturada em JSON.
-* Processamento em lote.
-* Backoff exponencial para tratamento de rate limits.
-* User-Agent customizado seguindo boas práticas de integração.
-* Operação resiliente diante de falhas dos provedores.
+* Validação matemática local de CNPJ
+* Arquitetura multi-provedor
+* Fallback inteligente entre APIs
+* Enriquecimento automático de dados
+* Processamento em lote
+* Exportação JSON
+* Backoff exponencial para HTTP 429
+* User-Agent customizado
+* Implementação pura em Python
+* Sem dependências externas
+
+---
+
+## Provedores Suportados
+
+### Fonte Primária
+
+* MinhaReceita
+
+### Fonte Secundária
+
+* PublicaCNPJ
+
+Os dados retornados são avaliados automaticamente e enriquecidos quando necessário.
 
 ---
 
@@ -188,72 +233,23 @@ A arquitetura foi originalmente desenvolvida para apoiar operações de PKI, emi
 CNPJ Informado
       │
       ▼
-Validação Matemática Local
+Validação Matemática
       │
       ▼
-Provedor Primário (MinhaReceita)
+MinhaReceita
       │
       ▼
-Avaliação da Resposta
+Validação da Resposta
       │
       ▼
-Provedor Secundário (PublicaCNPJ)
+Fallback PublicaCNPJ
       │
       ▼
-Mesclagem e Enriquecimento
+Enriquecimento
       │
       ▼
 Resultado Estruturado
 ```
-
----
-
-## Funcionalidades
-
-### Camada de Validação Local
-
-Executa a validação completa dos dígitos verificadores antes de qualquer consulta externa.
-
-Benefícios:
-
-* Redução do consumo de APIs.
-* Eliminação de consultas inválidas.
-* Melhor desempenho geral.
-
-### Fallback Inteligente
-
-Fonte principal:
-
-* MinhaReceita
-
-Fonte secundária:
-
-* PublicaCNPJ
-
-Caso informações críticas estejam ausentes, o sistema realiza enriquecimento automático utilizando fontes complementares.
-
-### Processamento em Lote
-
-Permite consultas massivas a partir de arquivos texto contendo um CNPJ por linha.
-
-Recursos:
-
-* Controle automático de delay.
-* Rastreamento de sucesso e falha.
-* Exportação consolidada em JSON.
-* Filtragem de CNPJs inválidos.
-
-### Resiliência de Rede
-
-Mecanismos implementados:
-
-* Classificação de erros HTTP.
-* Estratégia de retry exponencial.
-* Mitigação de rate limiting.
-* Controle de timeout.
-* Tratamento seguro de falhas.
-
----
 
 ## Exemplos de Uso
 
@@ -263,44 +259,58 @@ Consulta única:
 ./cnpj_query.py 53020152000112
 ```
 
-Consulta em lote:
+Ajuda:
+
+```bash
+./cnpj_query.py --help
+```
+
+## Processamento em Lote
+
+Arquivo de entrada:
+
+```text
+53020152000112
+12.345.678/0001-99
+```
+
+Execução:
 
 ```bash
 ./cnpj_query.py --lote empresas.txt
 ```
 
-Consulta em lote com exportação JSON:
+Exportação JSON:
 
 ```bash
-./cnpj_query.py --lote empresas.txt --json resultado.json
+./cnpj_query.py --lote empresas.txt --json resultados.json
 ```
 
 ---
 
 ## Aplicações
 
-* Validação para emissão de certificados digitais.
-* Fluxos de onboarding corporativo.
-* Auditoria de dados empresariais.
-* Integrações CRM e ERP.
-* Compliance corporativo.
-* Processos de PKI.
-* Automações de infraestrutura.
-* Inteligência operacional.
-
----
+* Validação para certificados digitais
+* Processos de PKI
+* Onboarding corporativo
+* Enriquecimento de CRM
+* Compliance
+* Inteligência operacional
 
 </details>
 
-## Security Policy / Política de Segurança
+---
 
-No private keys, production certificates, passwords, or active API tokens are stored within this repository.
+## 🗺️ Roadmap
 
-Local environments must rely on isolated configuration files, environment variables or `.env` files.
+### Planned
 
-*Nenhuma chave privada, certificado de produção, senha ou token ativo é armazenado neste repositório.*
-
-*Ambientes locais devem utilizar variáveis de ambiente, arquivos de configuração isolados ou arquivos `.env`.*
+* Additional providers
+* Local cache support
+* CSV export
+* Response normalization layer
+* Structured logging
+* Provider abstraction modules
 
 ---
 
@@ -308,12 +318,7 @@ Local environments must rely on isolated configuration files, environment variab
 
 GNU General Public License v3.0 (GPL-3.0)
 
----
-
-## Author
-
-**Thiago Bressani**
-bressix LABs
+Copyright (C) 2026 bressix LABs
 
 GitHub: https://github.com/bressix
 
