@@ -216,3 +216,10 @@ testssl*.log
 
 .DS_Store
 Thumbs.db
+
+# ==============================================================================
+# Local Working Drafts (Temporarily Local)
+# ==============================================================================
+
+firmware/bressix-DIV/design_inspiration.png
+system-hacking-n-tuning/windows/
