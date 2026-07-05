@@ -1,0 +1,13 @@
+# GlobalSign Atlas Products Configuration
+default: ssl_san5pack
+
+products:
+  ssl_test50pack:
+    description: "GlobalSign Atlas SSL Test 50-pack"
+    type: "product_pack"
+    secrets_folder: "atlas_test_50pack"
+    
+  ssl_san5pack:
+    description: "GlobalSign Atlas SAN 5-pack"
+    type: "san_license"
+    secrets_folder: "atlas_san_5pack"
