@@ -718,9 +718,9 @@ class CertificatesAPI:
         """
         Empacota certificados para entrega ao cliente.
         
-        Gera 15 arquivos (5 prefixos x 3 extensões):
-        - domain, intermediate, root, ca_chain, fullchain
-        - Extensões: .crt, .pem, .cer
+        Gera:
+        - domain_<nome>_<data>.crt (arquivo único no diretório)
+        - <nome>_certs_<data>.zip (com todos os 15 arquivos)
         
         Args:
             domain_file: Caminho do certificado do domínio
@@ -730,11 +730,12 @@ class CertificatesAPI:
             output_dir: Diretório de saída
             
         Returns:
-            Dict com caminhos dos arquivos gerados e informações do certificado
-            
-        Raises:
-            ValueError: Se algum arquivo não existir ou for inválido
+            Dict com caminhos dos arquivos gerados
         """
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        import re
+        
         # Valida arquivos de entrada
         for file_path, name in [
             (domain_file, "domain"),
@@ -763,75 +764,58 @@ class CertificatesAPI:
         # www é mantido
         name = re.sub(r'[^a-zA-Z0-9._-]', '_', name)
         
-        # Prefixos e extensões
+        # =============================================================
+        # ARQUIVO ÚNICO NO DIRETÓRIO: domain_<nome>_<data>.crt
+        # =============================================================
+        domain_out = f"domain_{name}_{date}.crt"
+        domain_path = output_path / domain_out
+        shutil.copy2(domain_file, domain_path)
+        
+        # =============================================================
+        # CRIA O ZIP COM TODOS OS 15 ARQUIVOS
+        # =============================================================
         prefixes = ['domain', 'intermediate', 'root', 'ca_chain', 'fullchain']
         extensions = ['crt', 'pem', 'cer']
-        
-        # Gera todos os nomes de arquivos (15)
-        files = {}
-        for prefix in prefixes:
-            for ext in extensions:
-                key = f"{prefix}_{ext}"
-                files[key] = f"{prefix}_{name}_{date}.{ext}"
-        
-        paths = {k: output_path / v for k, v in files.items()}
-        
-        # Remove arquivos antigos
-        for path in paths.values():
-            if path.exists():
-                path.unlink()
-        
-        # =============================================================
-        # GERA OS ARQUIVOS .crt (5 arquivos)
-        # =============================================================
-        
-        shutil.copy2(domain_file, paths['domain_crt'])
-        shutil.copy2(intermediate_file, paths['intermediate_crt'])
-        shutil.copy2(root_file, paths['root_crt'])
-        
-        # ca_chain.crt (intermediate + root)
-        with open(paths['ca_chain_crt'], 'w', encoding='utf-8') as f_out:
-            with open(intermediate_file, 'r', encoding='utf-8') as f_in:
-                f_out.write(f_in.read())
-            with open(root_file, 'r', encoding='utf-8') as f_in:
-                f_out.write(f_in.read())
-        
-        # fullchain.crt (domain + intermediate + root)
-        with open(paths['fullchain_crt'], 'w', encoding='utf-8') as f_out:
-            with open(domain_file, 'r', encoding='utf-8') as f_in:
-                f_out.write(f_in.read())
-            with open(intermediate_file, 'r', encoding='utf-8') as f_in:
-                f_out.write(f_in.read())
-            with open(root_file, 'r', encoding='utf-8') as f_in:
-                f_out.write(f_in.read())
-        
-        # =============================================================
-        # GERA OS ARQUIVOS .pem e .cer (cópias dos .crt)
-        # =============================================================
-        
-        for prefix in prefixes:
-            shutil.copy2(paths[f'{prefix}_crt'], paths[f'{prefix}_pem'])
-            shutil.copy2(paths[f'{prefix}_crt'], paths[f'{prefix}_cer'])
-        
-        # =============================================================
-        # CRIA O ZIP
-        # =============================================================
         
         zip_name = f"{name}_certs_{date}.zip"
         zip_path = output_path / zip_name
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for path in paths.values():
-                if path.exists():
-                    zf.write(path, path.name)
+            for prefix in prefixes:
+                for ext in extensions:
+                    # Nome do arquivo dentro do ZIP
+                    filename = f"{prefix}_{name}_{date}.{ext}"
+                    
+                    # Conteúdo do arquivo
+                    if prefix == 'domain':
+                        content = Path(domain_file).read_text(encoding='utf-8')
+                    elif prefix == 'intermediate':
+                        content = Path(intermediate_file).read_text(encoding='utf-8')
+                    elif prefix == 'root':
+                        content = Path(root_file).read_text(encoding='utf-8')
+                    elif prefix == 'ca_chain':
+                        content = Path(intermediate_file).read_text(encoding='utf-8') + Path(root_file).read_text(encoding='utf-8')
+                    elif prefix == 'fullchain':
+                        content = Path(domain_file).read_text(encoding='utf-8') + Path(intermediate_file).read_text(encoding='utf-8') + Path(root_file).read_text(encoding='utf-8')
+                    else:
+                        continue
+                    
+                    # Adiciona ao ZIP
+                    zf.writestr(filename, content)
         
-        # Extrai informações do certificado do domínio
+        # =============================================================
+        # EXTRAI INFORMAÇÕES DO CERTIFICADO
+        # =============================================================
         cert_info = self._extract_cert_info(domain_file)
         
         return {
             'dir': str(output_path),
             'zip': str(zip_path),
-            'files': {k: str(v) for k, v in paths.items()},
+            'domain_file': str(domain_path),
+            'files': {
+                'domain_crt': str(domain_path),
+                'zip': str(zip_path)
+            },
             'common_name': common_name,
             'sanitized_name': name,
             'date': date,

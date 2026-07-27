@@ -29,7 +29,10 @@ class AuthManager:
     """
     
     def __init__(self, config_dir: str = "config"):
+        # Define o diretório base do projeto (onde está o auth.py)
+        self.base_dir = Path(__file__).resolve().parent.parent
         self.config_dir = Path(config_dir)
+        
         self.products = self._load_products()
         self.instances: Dict[str, 'AtlasAuth'] = {}
         
@@ -46,8 +49,8 @@ class AuthManager:
                 self.secrets_base_dir = default_dir
                 print(f"[INFO] Usando diretório padrão: {self.secrets_base_dir}")
             else:
-                # Fallback 2: Appendix
-                appendix_fallback = Path(__file__).resolve().parents[3] / 'bressix-labs-workspace-appendix' / 'atlas_secrets'
+                # Fallback 2: Appendix (base_dir é globalsign-atlas-api, parents[2] vai para bressix-labs-workspace)
+                appendix_fallback = self.base_dir.parents[2] / 'bressix-labs-workspace-appendix' / 'atlas_secrets'
                 if appendix_fallback.exists():
                     self.secrets_base_dir = appendix_fallback
                     print(f"[WARN] Usando fallback (appendix): {self.secrets_base_dir}")
@@ -58,7 +61,9 @@ class AuthManager:
 
     def _load_products(self) -> dict:
         """Carrega o mapeamento de produtos a partir do arquivo YAML."""
-        config_file = self.config_dir / "products.yaml"
+        # Usa o diretório base do projeto (não o diretório de execução)
+        config_file = self.base_dir / self.config_dir / "products.yaml"
+        
         if not config_file.exists():
             raise FileNotFoundError(
                 f"Arquivo de configuração não encontrado: {config_file}"
@@ -399,7 +404,7 @@ class AtlasAuth:
                 f"Falha no login para {self.config['name']}: {e}"
             ) from e
         
-        # CORREÇÃO: Usa o método de fábrica para construir o LoginResponse
+        # Usa o método de fábrica para construir o LoginResponse
         try:
             login_response = LoginResponse.from_api_response(response)
         except (KeyError, TypeError, ValueError) as e:

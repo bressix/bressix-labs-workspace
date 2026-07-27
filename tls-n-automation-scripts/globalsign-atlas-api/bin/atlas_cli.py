@@ -244,14 +244,12 @@ def cmd_pack(args):
             print(f"  • Data de hoje: {Colors.CYAN}{result['date']}{Colors.NC}")
             
             print(f"\n{Colors.GREEN}📁 Arquivos gerados:{Colors.NC}")
-            for prefix in ['domain', 'intermediate', 'root', 'ca_chain', 'fullchain']:
-                path = result['files'].get(f'{prefix}_crt')
-                if path:
-                    print(f"  ✅ {Path(path).name}")
+            print(f"  ✅ {Path(result['domain_file']).name}")
+            print(f"  ✅ {Path(result['zip']).name}")
             
             print(f"\n{Colors.GREEN}🔍 Validando cadeia de certificados...{Colors.NC}")
             result_verify = subprocess.run(
-                ['openssl', 'verify', '-CAfile', str(Path(result['files']['ca_chain_crt'])), str(Path(result['files']['domain_crt']))],
+                ['openssl', 'verify', '-CAfile', str(Path(result['domain_file'])), str(Path(result['domain_file']))],
                 capture_output=True,
                 text=True
             )
@@ -268,7 +266,7 @@ def cmd_pack(args):
             print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC} Common Name:  {Colors.GREEN}{info['common_name']}{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC} Data:          {Colors.GREEN}{result['date']}{Colors.NC}")
-            print(f"{Colors.BLUE}║{Colors.NC} Arquivos:      {Colors.GREEN}5 certificados{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Arquivos:      {Colors.GREEN}1 domínio + 1 ZIP{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC} ZIP:           {Colors.GREEN}{result['zip']}{Colors.NC}")
             print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC}  Dados do Certificado do Domínio")
@@ -316,10 +314,8 @@ def cmd_pack(args):
             print(f"  • Data de hoje: {Colors.CYAN}{result['date']}{Colors.NC}")
             
             print(f"\n{Colors.GREEN}📁 Arquivos gerados:{Colors.NC}")
-            for prefix in ['domain', 'intermediate', 'root', 'ca_chain', 'fullchain']:
-                path = result['files'].get(f'{prefix}_crt')
-                if path:
-                    print(f"  ✅ {Path(path).name}")
+            print(f"  ✅ {Path(result['domain_file']).name}")
+            print(f"  ✅ {Path(result['zip']).name}")
             
             print(f"\n{Colors.GREEN}📦 Compactando certificados em ZIP...{Colors.NC}")
             print(f"  {Colors.GREEN}✅ Pacote criado:{Colors.NC} {result['zip']}")
@@ -329,7 +325,7 @@ def cmd_pack(args):
             print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC} Common Name:  {Colors.GREEN}{info['common_name']}{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC} Data:          {Colors.GREEN}{result['date']}{Colors.NC}")
-            print(f"{Colors.BLUE}║{Colors.NC} Arquivos:      {Colors.GREEN}5 certificados{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Arquivos:      {Colors.GREEN}1 domínio + 1 ZIP{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC} ZIP:           {Colors.GREEN}{result['zip']}{Colors.NC}")
             print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
             print(f"{Colors.BLUE}║{Colors.NC}  Dados do Certificado do Domínio")
