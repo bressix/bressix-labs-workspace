@@ -4,7 +4,10 @@
 import argparse
 import sys
 import os
+import shutil
+import subprocess
 from pathlib import Path
+from datetime import datetime
 
 # Injeta o diretório raiz no PATH para importações estáveis do core
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -22,10 +25,30 @@ from core_atlas.utils import (
 )
 
 
+# =============================================================
+# UTILITÁRIOS
+# =============================================================
+
+def format_timestamp(ts):
+    """Converte timestamp Unix para data legível."""
+    if not ts or ts == 'N/A':
+        return 'N/A'
+    try:
+        return datetime.fromtimestamp(int(ts)).strftime('%Y-%m-%d %H:%M:%S')
+    except:
+        return str(ts)
+
+
+# =============================================================
+# FUNÇÕES DE COMANDO
+# =============================================================
+
 def get_active_api(args):
     """Inicializa centralizadamente o motor de autenticação baseado nos argumentos da CLI"""
     if args.verbose:
         os.environ['VERBOSE'] = '1'
+        import logging
+        logging.basicConfig(level=logging.DEBUG)
         
     manager = AuthManager()
     target_product = args.product if args.product else manager.get_default_product()
@@ -138,6 +161,203 @@ def cmd_domain(args):
         print(f"{Colors.GREEN}[+] E-mail de desafio enviado para {args.email}.{Colors.NC}")
 
 
+def cmd_pack(args):
+    """Empacota certificados para entrega ao cliente."""
+    auth, product_id, manager = get_active_api(args)
+    api = CertificatesAPI(auth, auth_manager=manager)
+    
+    # =============================================================
+    # MODO 1: Automático (usa serial)
+    # =============================================================
+    if args.serial:
+        try:
+            print(f"{Colors.YELLOW}📡 Buscando certificado {args.serial}...{Colors.NC}")
+            
+            cert = api.get(args.serial)
+            if not cert.certificate:
+                raise ValueError("Certificado não encontrado ou ainda não emitido")
+            
+            print(f"{Colors.YELLOW}🔗 Buscando cadeia de confiança...{Colors.NC}")
+            chain = api.get_trust_chain()
+            
+            if len(chain) < 2:
+                raise ValueError("Cadeia de confiança incompleta (menos de 2 certificados)")
+            
+            # Salva arquivos temporários
+            temp_dir = Path(args.output) / f"temp_pack_{args.serial}"
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            
+            domain_file = temp_dir / "domain.crt"
+            intermediate_file = temp_dir / "intermediate.crt"
+            root_file = temp_dir / "root.crt"
+            
+            with open(domain_file, 'w', encoding='utf-8') as f:
+                f.write(cert.certificate)
+            
+            if len(chain) == 2:
+                with open(intermediate_file, 'w', encoding='utf-8') as f:
+                    f.write(chain[0])
+                with open(root_file, 'w', encoding='utf-8') as f:
+                    f.write(chain[1])
+            elif len(chain) > 2:
+                with open(intermediate_file, 'w', encoding='utf-8') as f:
+                    for cert_pem in chain[:-1]:
+                        f.write(cert_pem)
+                        f.write('\n')
+                with open(root_file, 'w', encoding='utf-8') as f:
+                    f.write(chain[-1])
+            else:
+                raise ValueError("Cadeia de confiança incompleta")
+            
+            # Extrai CN
+            from cryptography import x509
+            from cryptography.hazmat.backends import default_backend
+            with open(domain_file, 'rb') as f:
+                cert_obj = x509.load_pem_x509_certificate(f.read(), default_backend())
+                cn = cert_obj.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+                common_name = str(cn[0].value) if cn else args.common_name or f"cert_{args.serial}"
+            
+            print(f"{Colors.YELLOW}📦 Empacotando certificados...{Colors.NC}")
+            result = api.pack_certificates(
+                domain_file=str(domain_file),
+                intermediate_file=str(intermediate_file),
+                root_file=str(root_file),
+                common_name=common_name,
+                output_dir=args.output or "."
+            )
+            
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            
+            # =============================================================
+            # SAÍDA FORMATADA
+            # =============================================================
+            
+            info = result['cert_info']
+            
+            print(f"\n{Colors.BLUE}╔══════════════════════════════════════════════════════════════╗{Colors.NC}")
+            print(f"{Colors.BLUE}║              Pack de Certificados - bressix LABs             ║{Colors.NC}")
+            print(f"{Colors.BLUE}╚══════════════════════════════════════════════════════════════╝{Colors.NC}")
+            
+            print(f"\n{Colors.GREEN}📋 Informações extraídas:{Colors.NC}")
+            print(f"  • Common Name: {Colors.CYAN}{info['common_name']}{Colors.NC}")
+            print(f"  • SANs: {Colors.CYAN}{info['sans']}{Colors.NC}")
+            print(f"  • Data de hoje: {Colors.CYAN}{result['date']}{Colors.NC}")
+            
+            print(f"\n{Colors.GREEN}📁 Arquivos gerados:{Colors.NC}")
+            for prefix in ['domain', 'intermediate', 'root', 'ca_chain', 'fullchain']:
+                path = result['files'].get(f'{prefix}_crt')
+                if path:
+                    print(f"  ✅ {Path(path).name}")
+            
+            print(f"\n{Colors.GREEN}🔍 Validando cadeia de certificados...{Colors.NC}")
+            result_verify = subprocess.run(
+                ['openssl', 'verify', '-CAfile', str(Path(result['files']['ca_chain_crt'])), str(Path(result['files']['domain_crt']))],
+                capture_output=True,
+                text=True
+            )
+            if result_verify.returncode == 0 and 'OK' in result_verify.stdout:
+                print(f"  {Colors.GREEN}✔ Cadeia válida:{Colors.NC} {result_verify.stdout.strip()}")
+            else:
+                print(f"  {Colors.YELLOW}⚠ Cadeia não verificada{Colors.NC}")
+            
+            print(f"\n{Colors.GREEN}📦 Compactando certificados em ZIP...{Colors.NC}")
+            print(f"  {Colors.GREEN}✅ Pacote criado:{Colors.NC} {result['zip']}")
+            
+            print(f"\n{Colors.BLUE}╔══════════════════════════════════════════════════════════════╗{Colors.NC}")
+            print(f"{Colors.BLUE}║                    RESULTADO FINAL                          ║{Colors.NC}")
+            print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Common Name:  {Colors.GREEN}{info['common_name']}{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Data:          {Colors.GREEN}{result['date']}{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Arquivos:      {Colors.GREEN}5 certificados{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} ZIP:           {Colors.GREEN}{result['zip']}{Colors.NC}")
+            print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Dados do Certificado do Domínio")
+            print(f"{Colors.BLUE}║{Colors.NC}  Nome Comum: {info['common_name']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Nomes Alternativos (SANs): {info['sans']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Organização: {info['organization']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Unidade Organizacional: {info['organizational_unit']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Cidade: {info['locality']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Estado: {info['state']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Pais: {info['country']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Valido a partir de: {info['valid_from']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Valido até: {info['valid_to']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Emissor: {info['issuer']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Número serial: {info['serial']}")
+            print(f"{Colors.BLUE}╚══════════════════════════════════════════════════════════════╝{Colors.NC}")
+            
+        except Exception as e:
+            print(f"{Colors.RED}[-] Erro ao criar pacote: {e}{Colors.NC}")
+            temp_dir = Path(args.output) / f"temp_pack_{args.serial}"
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        return
+    
+    # =============================================================
+    # MODO 2: Manual (usa arquivos fornecidos)
+    # =============================================================
+    if args.domain_cert and args.intermediate_cert and args.root_cert:
+        try:
+            result = api.pack_certificates(
+                domain_file=args.domain_cert,
+                intermediate_file=args.intermediate_cert,
+                root_file=args.root_cert,
+                common_name=args.common_name,
+                output_dir=args.output or "."
+            )
+            
+            info = result['cert_info']
+            
+            print(f"\n{Colors.BLUE}╔══════════════════════════════════════════════════════════════╗{Colors.NC}")
+            print(f"{Colors.BLUE}║              Pack de Certificados - bressix LABs             ║{Colors.NC}")
+            print(f"{Colors.BLUE}╚══════════════════════════════════════════════════════════════╝{Colors.NC}")
+            
+            print(f"\n{Colors.GREEN}📋 Informações extraídas:{Colors.NC}")
+            print(f"  • Common Name: {Colors.CYAN}{info['common_name']}{Colors.NC}")
+            print(f"  • SANs: {Colors.CYAN}{info['sans']}{Colors.NC}")
+            print(f"  • Data de hoje: {Colors.CYAN}{result['date']}{Colors.NC}")
+            
+            print(f"\n{Colors.GREEN}📁 Arquivos gerados:{Colors.NC}")
+            for prefix in ['domain', 'intermediate', 'root', 'ca_chain', 'fullchain']:
+                path = result['files'].get(f'{prefix}_crt')
+                if path:
+                    print(f"  ✅ {Path(path).name}")
+            
+            print(f"\n{Colors.GREEN}📦 Compactando certificados em ZIP...{Colors.NC}")
+            print(f"  {Colors.GREEN}✅ Pacote criado:{Colors.NC} {result['zip']}")
+            
+            print(f"\n{Colors.BLUE}╔══════════════════════════════════════════════════════════════╗{Colors.NC}")
+            print(f"{Colors.BLUE}║                    RESULTADO FINAL                          ║{Colors.NC}")
+            print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Common Name:  {Colors.GREEN}{info['common_name']}{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Data:          {Colors.GREEN}{result['date']}{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} Arquivos:      {Colors.GREEN}5 certificados{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC} ZIP:           {Colors.GREEN}{result['zip']}{Colors.NC}")
+            print(f"{Colors.BLUE}╠══════════════════════════════════════════════════════════════╣{Colors.NC}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Dados do Certificado do Domínio")
+            print(f"{Colors.BLUE}║{Colors.NC}  Nome Comum: {info['common_name']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Nomes Alternativos (SANs): {info['sans']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Organização: {info['organization']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Unidade Organizacional: {info['organizational_unit']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Cidade: {info['locality']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Estado: {info['state']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Pais: {info['country']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Valido a partir de: {info['valid_from']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Valido até: {info['valid_to']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Emissor: {info['issuer']}")
+            print(f"{Colors.BLUE}║{Colors.NC}  Número serial: {info['serial']}")
+            print(f"{Colors.BLUE}╚══════════════════════════════════════════════════════════════╝{Colors.NC}")
+            
+        except Exception as e:
+            print(f"{Colors.RED}[-] Erro ao criar pacote: {e}{Colors.NC}")
+        return
+    
+    # =============================================================
+    # Nenhum modo selecionado
+    # =============================================================
+    print(f"{Colors.RED}[-] Para --pack, informe --serial <SERIAL> ou os três certificados.{Colors.NC}")
+    print(f"{Colors.YELLOW}  Modo automático:  --pack --serial 12345{Colors.NC}")
+    print(f"{Colors.YELLOW}  Modo manual:     --pack --domain-cert x --intermediate-cert y --root-cert z{Colors.NC}")
+
+
 def cmd_cert(args):
     """Gerencia ciclo de vida, emissão e revogação de certificados TLS"""
     auth, product_id, manager = get_active_api(args)
@@ -145,6 +365,51 @@ def cmd_cert(args):
     
     if args.policy:
         print(api.format_validation_policy())
+        return
+
+    if args.trustchain:
+        try:
+            chain = api.get_trust_chain()
+            print(f"\n{Colors.GREEN}🔗 Cadeia de Confiança (Trust Chain):{Colors.NC}")
+            print("=" * 80)
+            for i, cert in enumerate(chain, 1):
+                print(f"\n{Colors.CYAN}📜 Certificado {i}:{Colors.NC}")
+                lines = cert.split('\n')
+                print('\n'.join(lines[:3]))
+                print(f"  ... ({len(lines) - 5} linhas omitidas) ...")
+                print('\n'.join(lines[-2:]))
+                print(f"  📏 Tamanho: {len(cert)} caracteres")
+            if not chain:
+                print(f"{Colors.YELLOW}[!] Nenhum certificado na cadeia de confiança.{Colors.NC}")
+        except Exception as e:
+            print(f"{Colors.RED}[-] Erro ao buscar trust chain: {e}{Colors.NC}")
+        return
+
+    if args.pack:
+        cmd_pack(args)
+        return
+
+    if args.search_cn:
+        try:
+            results = api.search_by_cn(args.search_cn, days=args.days or 30)
+            
+            if not results:
+                print(f"\n{Colors.YELLOW}🔍 Nenhum certificado encontrado com CN contendo '{args.search_cn}'{Colors.NC}")
+                return
+            
+            print(f"\n{Colors.GREEN}🔍 Certificados encontrados com CN contendo '{args.search_cn}':{Colors.NC}")
+            print("=" * 80)
+            
+            for cert in results:
+                status_color = Colors.GREEN if cert['status'] == 'ISSUED' else Colors.YELLOW
+                print(f"  Serial: {Colors.CYAN}{cert['serial']}{Colors.NC}")
+                print(f"  CN:     {Colors.BOLD}{cert['common_name']}{Colors.NC}")
+                print(f"  Status: {status_color}{cert['status']}{Colors.NC}")
+                print(f"  Expira: {format_timestamp(cert['not_after'])}")
+                print("-" * 40)
+                
+        except Exception as e:
+            print(f"{Colors.RED}[-] Erro na busca: {e}{Colors.NC}")
         return
 
     if args.issue:
@@ -282,29 +547,64 @@ def cmd_cert(args):
     if args.list_issued:
         try:
             res = api.list_issued(days=args.days)
+            # Inverte para mostrar os mais recentes primeiro
+            res = list(reversed(res))
+            
+            # Limite de exibição: 20 por padrão, todos se --all
+            display_limit = None if args.all else 20
+            
             print(f"\n{Colors.BLUE}📜 Últimos Certificados Emitidos (Janela: {args.days} dias):{Colors.NC}")
             print("=" * 80)
-            for r in res[:20]:
-                # A API retorna snake_case: serial_number, not_before, not_after
-                print(f"  Serial: {r.get('serial_number', 'N/A')} | Emitido: {r.get('not_before', 'N/A')} | Expira: {r.get('not_after', 'N/A')}")
-            if len(res) > 20:
-                print(f"  ... e mais {len(res) - 20} resultados.")
+            
+            if display_limit:
+                items = res[:display_limit]
+            else:
+                items = res
+            
+            for r in items:
+                serial = r.get('serial_number', 'N/A')
+                issued = format_timestamp(r.get('not_before'))
+                expires = format_timestamp(r.get('not_after'))
+                print(f"  Serial: {serial} | Emitido: {issued} | Expira: {expires}")
+            
+            if display_limit and len(res) > display_limit:
+                print(f"  ... e mais {len(res) - display_limit} resultados. Use --all para ver todos.")
+            
         except Exception as e:
             print(f"{Colors.RED}[-] Erro ao listar emitidos: {e}{Colors.NC}")
             
     elif args.list_revoked:
         try:
             res = api.list_revoked(days=args.days)
+            # Inverte para mostrar os mais recentes primeiro
+            res = list(reversed(res))
+            
+            # Limite de exibição: 20 por padrão, todos se --all
+            display_limit = None if args.all else 20
+            
             print(f"\n{Colors.RED}❌ Certificados Revogados na Janela ({args.days} dias):{Colors.NC}")
             print("=" * 80)
-            for r in res[:20]:
-                # A API retorna snake_case: serial_number, revocation_reason, not_before, not_after
-                print(f"  Serial: {r.get('serial_number', 'N/A')} | Motivo: {r.get('revocation_reason', 'N/A')}")
-            if len(res) > 20:
-                print(f"  ... e mais {len(res) - 20} resultados.")
+            
+            if display_limit:
+                items = res[:display_limit]
+            else:
+                items = res
+            
+            for r in items:
+                serial = r.get('serial_number', 'N/A')
+                reason = r.get('revocation_reason', 'N/A')
+                print(f"  Serial: {serial} | Motivo: {reason}")
+            
+            if display_limit and len(res) > display_limit:
+                print(f"  ... e mais {len(res) - display_limit} resultados. Use --all para ver todos.")
+            
         except Exception as e:
             print(f"{Colors.RED}[-] Erro ao listar revogados: {e}{Colors.NC}")
 
+
+# =============================================================
+# MAIN
+# =============================================================
 
 def main():
     parser = argparse.ArgumentParser(
@@ -320,8 +620,9 @@ Gerencia certificados TLS/mTLS via API GlobalSign Atlas.
 │  3. Verificar status             →  atlas_cli.py cert --get <SERIAL>      │
 │  4. Baixar certificado           →  atlas_cli.py cert --get <SERIAL> -o   │
 │  5. Listar emitidos              →  atlas_cli.py cert --list-issued        │
-│  6. Rekey (renovar chave)        →  atlas_cli.py cert --rekey <SERIAL>    │
-│  7. Revogar certificado          →  atlas_cli.py cert --revoke <SERIAL>   │
+│  6. Buscar por CN                →  atlas_cli.py cert --search-cn <CN>     │
+│  7. Rekey (renovar chave)        →  atlas_cli.py cert --rekey <SERIAL>    │
+│  8. Revogar certificado          →  atlas_cli.py cert --revoke <SERIAL>   │
 └─────────────────────────────────────────────────────────────────────────────┘
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -336,10 +637,16 @@ Gerencia certificados TLS/mTLS via API GlobalSign Atlas.
       Lista todos os produtos disponíveis no workspace
 
   atlas_cli.py product
-      Mostra status de consumo do produto ativo (emitidos, revogados, expirando)
+      Mostra status de consumo do produto ativo
 
-  🔹 CERTIFICADOS (Modo Assíncrono é o padrão)
+  🔹 CERTIFICADOS (use o subcomando 'cert')
   ────────────────────────────────────────────────────────────────────────────────
+  atlas_cli.py cert --trustchain
+      Exibe a cadeia de confiança da CA
+
+  atlas_cli.py cert --policy
+      Exibe a política de validação da CA
+
   atlas_cli.py cert --issue --csr /path/to/meu.csr
       Solicita um certificado (retorna o serial imediatamente)
 
@@ -352,19 +659,37 @@ Gerencia certificados TLS/mTLS via API GlobalSign Atlas.
   atlas_cli.py cert --list-issued --days 30
       Lista certificados emitidos nos últimos 30 dias
 
+  atlas_cli.py cert --list-issued --days 30 --all
+      Lista TODOS os certificados emitidos nos últimos 30 dias
+
   atlas_cli.py cert --list-revoked --days 30
       Lista certificados revogados nos últimos 30 dias
+
+  atlas_cli.py cert --list-revoked --days 30 --all
+      Lista TODOS os certificados revogados nos últimos 30 dias
+
+  atlas_cli.py cert --search-cn "gruponk" --days 30
+      Busca certificados por substring no Common Name (case-insensitive)
+
+  atlas_cli.py cert --search-cn "*.keysec.com.br" --days 30
+      Busca certificados por wildcard no Common Name
 
   atlas_cli.py cert --revoke 12345 --reason "Chave comprometida"
       Revoga um certificado
 
   atlas_cli.py cert --rekey 12345 --csr /path/to/novo.csr
-      Executa rekey de um certificado (renova a chave mantendo os mesmos dados)
+      Executa rekey de um certificado
 
-  atlas_cli.py cert --policy
-      Exibe a política de validação da CA
+  atlas_cli.py cert --pack --serial 12345
+      Empacota certificados para entrega ao cliente (automático)
 
-  🔹 DOMÍNIOS (Claims)
+  atlas_cli.py cert --pack --serial 12345 --output /caminho/para/pasta
+      Empacota certificados e salva em um diretório específico
+
+  atlas_cli.py cert --pack --domain-cert domain.crt --intermediate-cert intermediate.crt --root-cert root.crt
+      Empacota certificados para entrega ao cliente (manual)
+
+  🔹 DOMÍNIOS (use o subcomando 'domain')
   ────────────────────────────────────────────────────────────────────────────────
   atlas_cli.py domain --list
       Lista todos os domínios validados na conta
@@ -464,17 +789,20 @@ Exemplos:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemplos:
+  # Cadeia de Confiança
+  atlas_cli.py cert --trustchain
+
+  # Política
+  atlas_cli.py cert --policy
+
   # Emissão Assíncrona (PADRÃO)
   atlas_cli.py cert --issue --csr /path/to/meu.csr
-      Solicita o certificado e retorna o serial imediatamente
 
   # Emissão com Polling
   atlas_cli.py cert --issue --csr /path/to/meu.csr --wait 60
-      Aguarda o certificado ficar pronto (até 60s)
 
   # Consulta
   atlas_cli.py cert --get 12345 --output certificado.crt
-      Busca o certificado pelo serial
 
   # Revogação
   atlas_cli.py cert --revoke 12345 --reason "Chave comprometida"
@@ -482,16 +810,30 @@ Exemplos:
   # Rekey
   atlas_cli.py cert --rekey 12345 --csr /path/to/novo.csr
 
-  # Listagens
+  # Empacotamento (automático)
+  atlas_cli.py cert --pack --serial 12345
+  atlas_cli.py cert --pack --serial 12345 --output /caminho/para/pasta
+
+  # Empacotamento (manual)
+  atlas_cli.py cert --pack --domain-cert domain.crt --intermediate-cert intermediate.crt --root-cert root.crt
+
+  # Listagens (com limite de 20)
   atlas_cli.py cert --list-issued --days 30
   atlas_cli.py cert --list-revoked --days 30
 
-  # Política
-  atlas_cli.py cert --policy
+  # Listagens (todos os resultados)
+  atlas_cli.py cert --list-issued --days 30 --all
+  atlas_cli.py cert --list-revoked --days 30 --all
+
+  # Busca por CN (substring ou wildcard)
+  atlas_cli.py cert --search-cn "gruponk" --days 30
+  atlas_cli.py cert --search-cn "*.keysec.com.br" --days 30
 """
     )
     p_cert.add_argument('--policy', action='store_true', 
                         help='Exibir políticas restritivas do CA')
+    p_cert.add_argument('--trustchain', action='store_true',
+                        help='Exibir a cadeia de confiança da CA')
     p_cert.add_argument('--issue', action='store_true', 
                         help='Solicitar um novo certificado (modo assíncrono)')
     p_cert.add_argument('--csr', 
@@ -503,7 +845,18 @@ Exemplos:
     p_cert.add_argument('--get', metavar='SERIAL', 
                         help='Coletar binários de um certificado existente')
     p_cert.add_argument('--output', '-o', 
-                        help='Caminho de saída para salvar o certificado coletado (.crt)')
+                        help='Diretório de saída para arquivos (certificados, pacotes, etc.)')
+    p_cert.add_argument('--pack', action='store_true',
+                        help='Empacota certificados para entrega ao cliente')
+    p_cert.add_argument('--serial', help='Serial do certificado (modo automático)')
+    p_cert.add_argument('--domain-cert', help='Certificado do domínio (modo manual)')
+    p_cert.add_argument('--intermediate-cert', help='Certificado intermediário (modo manual)')
+    p_cert.add_argument('--root-cert', help='Certificado raiz (modo manual)')
+    p_cert.add_argument('--common-name', help='Nome comum para nomear os arquivos (opcional)')
+    p_cert.add_argument('--search-cn', metavar='PATTERN',
+                        help='Busca certificados por Common Name (suporta substring ou wildcards como *.dominio.com)')
+    p_cert.add_argument('--all', action='store_true',
+                        help='Lista todos os resultados (sem limite de 20)')
     p_cert.add_argument('--revoke', metavar='SERIAL', 
                         help='Revogar credencial no cluster')
     p_cert.add_argument('--reason', 

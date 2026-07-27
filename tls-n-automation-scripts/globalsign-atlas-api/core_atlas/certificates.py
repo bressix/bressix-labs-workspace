@@ -3,8 +3,16 @@ import os
 import time
 import logging
 import json
+import shutil
+import zipfile
+import re
+import fnmatch
 from typing import Optional, List, Dict, Any
 from pathlib import Path
+from datetime import datetime
+
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
 from .models import Certificate, CertificateStatus
 from .utils import (
@@ -25,6 +33,8 @@ class CertificatesAPI:
     - Consulta de certificados
     - Revogação e rekey
     - Listagem de certificados emitidos/revogados/expirados
+    - Empacotamento de certificados para entrega ao cliente
+    - Busca de certificados por Common Name (substring ou wildcard)
     """
     
     def __init__(self, auth, auth_manager=None):
@@ -419,9 +429,27 @@ class CertificatesAPI:
         return self.get(new_serial)
     
     def get_trust_chain(self) -> List[str]:
-        """Retorna a cadeia de confiança da CA."""
+        """
+        Retorna a cadeia de confiança da CA.
+        
+        A API GlobalSign Atlas retorna uma lista de certificados PEM
+        diretamente no corpo da resposta.
+        
+        Returns:
+            List[str]: Lista de certificados PEM da cadeia de confiança
+        """
         response = self._get_client().request('GET', '/trustchain')
-        return response.get('certificates', [])
+        
+        # A API retorna uma lista diretamente
+        if isinstance(response, list):
+            return response
+        
+        # Fallback: se for um dict com a chave 'certificates'
+        if isinstance(response, dict):
+            return response.get('certificates', [])
+        
+        # Caso inesperado
+        return []
     
     def list_issued(self, days: Optional[int] = None, page: int = 1, per_page: int = 100) -> List[Dict[str, Any]]:
         """Lista certificados emitidos nos últimos N dias."""
@@ -521,3 +549,291 @@ class CertificatesAPI:
                     lines.append(f"  • permitidos: {', '.join(allowed)}")
         
         return "\n".join(lines)
+    
+    # =============================================================
+    # SEARCH BY CN
+    # =============================================================
+    
+    def search_by_cn(self, cn_pattern: str, days: int = 30) -> List[Dict[str, Any]]:
+        """
+        Busca certificados emitidos que correspondem a um padrão de CN.
+        
+        Suporta:
+        - Substring: "gruponk" → encontra "www.gruponk.com.br"
+        - Wildcard: "*.keysec.com.br" → encontra "www.keysec.com.br"
+        - Exato: "www.gruponk.com.br" → encontra exatamente
+        
+        Args:
+            cn_pattern: Padrão do Common Name
+            days: Período de busca em dias (padrão: 30)
+            
+        Returns:
+            Lista de certificados que correspondem ao padrão
+        """
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        
+        issued = self.list_issued(days=days)
+        results = []
+        
+        print(f"🔍 Buscando certificados com CN contendo '{cn_pattern}'...")
+        print(f"📊 Verificando {len(issued)} certificados emitidos nos últimos {days} dias...")
+        
+        for i, item in enumerate(issued):
+            serial = item.get('serial_number')
+            if not serial:
+                continue
+            
+            if (i + 1) % 5 == 0:
+                print(f"  ⏳ Processando {i + 1}/{len(issued)}...")
+            
+            try:
+                cert = self.get(serial)
+                cert_pem = cert.certificate
+                
+                if not cert_pem:
+                    continue
+                
+                # Extrai o CN do certificado PEM
+                cert_obj = x509.load_pem_x509_certificate(cert_pem.encode(), default_backend())
+                subject = cert_obj.subject
+                cn_attrs = subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+                cn = str(cn_attrs[0].value) if cn_attrs else ''
+                
+                if not cn:
+                    continue
+                
+                # Verifica se o CN corresponde ao padrão
+                if '*' in cn_pattern:
+                    if fnmatch.fnmatch(cn.lower(), cn_pattern.lower()):
+                        results.append({
+                            'serial': serial,
+                            'common_name': cn,
+                            'not_before': cert.not_before,
+                            'not_after': cert.not_after,
+                            'status': cert.status.value if hasattr(cert.status, 'value') else cert.status,
+                            'certificate': cert.certificate,
+                            'raw_data': cert.raw_data
+                        })
+                else:
+                    if cn_pattern.lower() in cn.lower():
+                        results.append({
+                            'serial': serial,
+                            'common_name': cn,
+                            'not_before': cert.not_before,
+                            'not_after': cert.not_after,
+                            'status': cert.status.value if hasattr(cert.status, 'value') else cert.status,
+                            'certificate': cert.certificate,
+                            'raw_data': cert.raw_data
+                        })
+                        
+            except Exception as e:
+                print(f"  ⚠️ Erro ao buscar serial {serial}: {e}")
+                continue
+        
+        print(f"✅ Encontrados {len(results)} certificados correspondentes.")
+        return results
+    
+    # =============================================================
+    # PACK CERTIFICATES
+    # =============================================================
+    
+    def _extract_cert_info(self, cert_path: str) -> Dict[str, str]:
+        """
+        Extrai informações detalhadas de um certificado X.509.
+        
+        Retorna:
+            {
+                'common_name': str,
+                'sans': str,
+                'organization': str,
+                'organizational_unit': str,
+                'locality': str,
+                'state': str,
+                'country': str,
+                'valid_from': str,
+                'valid_to': str,
+                'issuer': str,
+                'serial': str
+            }
+        """
+        with open(cert_path, 'rb') as f:
+            cert = x509.load_pem_x509_certificate(f.read(), default_backend())
+        
+        # Subject
+        subject = cert.subject
+        cn = subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+        o = subject.get_attributes_for_oid(x509.NameOID.ORGANIZATION_NAME)
+        ou = subject.get_attributes_for_oid(x509.NameOID.ORGANIZATIONAL_UNIT_NAME)
+        l = subject.get_attributes_for_oid(x509.NameOID.LOCALITY_NAME)
+        st = subject.get_attributes_for_oid(x509.NameOID.STATE_OR_PROVINCE_NAME)
+        c = subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)
+        
+        # SANs
+        sans = []
+        try:
+            san_ext = cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+            for name in san_ext.value:
+                if isinstance(name, x509.DNSName):
+                    sans.append(str(name))
+        except x509.ExtensionNotFound:
+            pass
+        
+        # Issuer
+        issuer = cert.issuer
+        issuer_cn = issuer.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+        issuer_o = issuer.get_attributes_for_oid(x509.NameOID.ORGANIZATION_NAME)
+        issuer_c = issuer.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)
+        
+        issuer_str = []
+        if issuer_cn:
+            issuer_str.append(f"CN={issuer_cn[0].value}")
+        if issuer_o:
+            issuer_str.append(f"O={issuer_o[0].value}")
+        if issuer_c:
+            issuer_str.append(f"C={issuer_c[0].value}")
+        
+        return {
+            'common_name': str(cn[0].value) if cn else 'N/A',
+            'sans': ', '.join(sans) if sans else 'N/A',
+            'organization': str(o[0].value) if o else 'N/A',
+            'organizational_unit': str(ou[0].value) if ou else 'N/A',
+            'locality': str(l[0].value) if l else 'N/A',
+            'state': str(st[0].value) if st else 'N/A',
+            'country': str(c[0].value) if c else 'N/A',
+            'valid_from': cert.not_valid_before_utc.strftime('%b %d %H:%M:%S %Y GMT'),
+            'valid_to': cert.not_valid_after_utc.strftime('%b %d %H:%M:%S %Y GMT'),
+            'issuer': ', '.join(issuer_str) if issuer_str else 'N/A',
+            'serial': format(cert.serial_number, 'X').zfill(2)
+        }
+    
+    def pack_certificates(
+        self,
+        domain_file: str,
+        intermediate_file: str,
+        root_file: str,
+        common_name: Optional[str] = None,
+        output_dir: str = "."
+    ) -> Dict[str, Any]:
+        """
+        Empacota certificados para entrega ao cliente.
+        
+        Gera 15 arquivos (5 prefixos x 3 extensões):
+        - domain, intermediate, root, ca_chain, fullchain
+        - Extensões: .crt, .pem, .cer
+        
+        Args:
+            domain_file: Caminho do certificado do domínio
+            intermediate_file: Caminho do certificado intermediário
+            root_file: Caminho do certificado raiz
+            common_name: Nome comum (opcional, extraído do cert se não fornecido)
+            output_dir: Diretório de saída
+            
+        Returns:
+            Dict com caminhos dos arquivos gerados e informações do certificado
+            
+        Raises:
+            ValueError: Se algum arquivo não existir ou for inválido
+        """
+        # Valida arquivos de entrada
+        for file_path, name in [
+            (domain_file, "domain"),
+            (intermediate_file, "intermediate"),
+            (root_file, "root")
+        ]:
+            if not Path(file_path).exists():
+                raise ValueError(f"{name} certificate not found: {file_path}")
+        
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Extrai CN se não foi fornecido
+        if not common_name:
+            with open(domain_file, 'rb') as f:
+                cert = x509.load_pem_x509_certificate(f.read(), default_backend())
+                cn = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+                common_name = str(cn[0].value) if cn else "certificate"
+        
+        date = datetime.now().strftime("%Y%m%d")
+        
+        # Sanitiza nome
+        name = str(common_name).strip()
+        if name.startswith('*.'):
+            name = 'wc.' + name[2:]
+        # www é mantido
+        name = re.sub(r'[^a-zA-Z0-9._-]', '_', name)
+        
+        # Prefixos e extensões
+        prefixes = ['domain', 'intermediate', 'root', 'ca_chain', 'fullchain']
+        extensions = ['crt', 'pem', 'cer']
+        
+        # Gera todos os nomes de arquivos (15)
+        files = {}
+        for prefix in prefixes:
+            for ext in extensions:
+                key = f"{prefix}_{ext}"
+                files[key] = f"{prefix}_{name}_{date}.{ext}"
+        
+        paths = {k: output_path / v for k, v in files.items()}
+        
+        # Remove arquivos antigos
+        for path in paths.values():
+            if path.exists():
+                path.unlink()
+        
+        # =============================================================
+        # GERA OS ARQUIVOS .crt (5 arquivos)
+        # =============================================================
+        
+        shutil.copy2(domain_file, paths['domain_crt'])
+        shutil.copy2(intermediate_file, paths['intermediate_crt'])
+        shutil.copy2(root_file, paths['root_crt'])
+        
+        # ca_chain.crt (intermediate + root)
+        with open(paths['ca_chain_crt'], 'w', encoding='utf-8') as f_out:
+            with open(intermediate_file, 'r', encoding='utf-8') as f_in:
+                f_out.write(f_in.read())
+            with open(root_file, 'r', encoding='utf-8') as f_in:
+                f_out.write(f_in.read())
+        
+        # fullchain.crt (domain + intermediate + root)
+        with open(paths['fullchain_crt'], 'w', encoding='utf-8') as f_out:
+            with open(domain_file, 'r', encoding='utf-8') as f_in:
+                f_out.write(f_in.read())
+            with open(intermediate_file, 'r', encoding='utf-8') as f_in:
+                f_out.write(f_in.read())
+            with open(root_file, 'r', encoding='utf-8') as f_in:
+                f_out.write(f_in.read())
+        
+        # =============================================================
+        # GERA OS ARQUIVOS .pem e .cer (cópias dos .crt)
+        # =============================================================
+        
+        for prefix in prefixes:
+            shutil.copy2(paths[f'{prefix}_crt'], paths[f'{prefix}_pem'])
+            shutil.copy2(paths[f'{prefix}_crt'], paths[f'{prefix}_cer'])
+        
+        # =============================================================
+        # CRIA O ZIP
+        # =============================================================
+        
+        zip_name = f"{name}_certs_{date}.zip"
+        zip_path = output_path / zip_name
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for path in paths.values():
+                if path.exists():
+                    zf.write(path, path.name)
+        
+        # Extrai informações do certificado do domínio
+        cert_info = self._extract_cert_info(domain_file)
+        
+        return {
+            'dir': str(output_path),
+            'zip': str(zip_path),
+            'files': {k: str(v) for k, v in paths.items()},
+            'common_name': common_name,
+            'sanitized_name': name,
+            'date': date,
+            'cert_info': cert_info
+        }
