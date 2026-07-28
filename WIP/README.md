@@ -21,29 +21,25 @@
 
 This repository is the main engineering workspace for **bressix LABs**.
 
-Here you'll find projects ranging from small utilities to larger engineering platforms, covering software, embedded systems, hardware, infrastructure, information security, automation, and applied research.
+Here you'll find projects at different stages of development. Some are production-ready and actively maintained, while others are early prototypes, experiments, or ongoing research. That diversity is intentional and reflects how we approach engineering.
 
-Some projects are ready for daily use. Others are still experimental or in active development. That is intentional.
+We believe good engineering evolves through iteration. Ideas are tested, designs are refined, and documentation grows alongside the project. Rather than waiting for everything to be perfect, we prefer to share our work as it evolves.
 
-We prefer to share our work as it evolves rather than waiting for a perfect version that may never exist.
+Not every repository follows the same structure, contains the same level of documentation, or has the same degree of maturity. Each project is documented according to its own complexity and current stage of development.
 
-Unless explicitly documented otherwise within a specific project, everything in this workspace should be considered a **Proof of Concept (PoC)** or an engineering work in progress.
-
-Architectures, interfaces, APIs, hardware designs, firmware, and implementation details may change without notice as projects mature.
+The purpose of this workspace is to build, document, and share engineering projects as they evolve.
 
 ### Português
 
-Este repositório é o principal workspace de engenharia da **bressix LABs**.
+Este repositório é o principal ambiente de engenharia da **bressix LABs**.
 
-Aqui você encontrará projetos que vão desde pequenos utilitários até plataformas de engenharia mais complexas, envolvendo software, sistemas embarcados, hardware, infraestrutura, segurança da informação, automação e pesquisa aplicada.
+Aqui você encontrará projetos em diferentes estágios de desenvolvimento. Alguns estão prontos para uso e são mantidos ativamente, enquanto outros ainda são protótipos, experimentos ou pesquisas em andamento. Essa diversidade é intencional e reflete a forma como fazemos engenharia.
 
-Alguns projetos já estão prontos para uso diário. Outros ainda estão em fase experimental ou em desenvolvimento ativo. Isso é intencional.
+Acreditamos que boa engenharia evolui por meio da iteração. Ideias são testadas, projetos são refinados e a documentação cresce junto com o próprio desenvolvimento. Em vez de esperar que tudo esteja perfeito, preferimos compartilhar nosso trabalho à medida que ele evolui.
 
-Preferimos compartilhar nosso trabalho enquanto ele evolui, em vez de esperar por uma versão perfeita que talvez nunca exista.
+Nem todos os repositórios seguem a mesma estrutura, possuem o mesmo nível de documentação ou apresentam o mesmo grau de maturidade. Cada projeto é documentado de acordo com sua complexidade e seu estágio de desenvolvimento.
 
-Salvo indicação explícita em um projeto específico, todo o conteúdo deste workspace deve ser considerado uma **Prova de Conceito (PoC)** ou um trabalho de engenharia em constante evolução.
-
-Arquiteturas, interfaces, APIs, projetos de hardware, firmwares e detalhes de implementação podem mudar sem aviso prévio conforme os projetos amadurecem.
+O propósito deste workspace é construir, documentar e compartilhar projetos de engenharia à medida que evoluem.
 
 ---
 
