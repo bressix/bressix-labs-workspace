@@ -103,19 +103,21 @@ Os repositórios podem conter arquivos de exemplo, certificados fictícios, cred
 
 ### English
 
-We created bressix LABs as a place to build, study, document, and share engineering projects.
+bressix LABs exists to build, study, document, and share engineering projects.
 
-Some solve problems we encountered ourselves. Others exist simply because we wanted to understand how something works.
+Our work spans multiple disciplines—including hardware, embedded systems, Linux, information security, PKI, automation, infrastructure, and applied research—but the goal remains the same: solving real problems, documenting technical decisions, and making that knowledge available to others.
 
-Regardless of their size, we try to document the decisions behind each project so the engineering remains useful long after the code is written.
+We believe engineering knowledge becomes more valuable when it is documented, reproducible, and shared.
+
+---
 
 ### Português
 
-Criamos a bressix LABs como um espaço para construir, estudar, documentar e compartilhar projetos de engenharia.
+A bressix LABs existe para construir, estudar, documentar e compartilhar projetos de engenharia.
 
-Alguns resolvem problemas que encontramos no dia a dia. Outros existem simplesmente porque queríamos entender melhor como determinada tecnologia funciona.
+Nosso trabalho abrange diversas áreas — incluindo hardware, sistemas embarcados, Linux, segurança da informação, PKI, automação, infraestrutura e pesquisa aplicada — mas o objetivo permanece o mesmo: resolver problemas reais, documentar decisões técnicas e tornar esse conhecimento acessível a outras pessoas.
 
-Independentemente do tamanho do projeto, procuramos documentar as decisões de engenharia para que esse conhecimento continue útil muito depois de o código ser escrito.
+Acreditamos que o conhecimento de engenharia se torna mais valioso quando é documentado, reproduzível e compartilhado.
 
 ---
 
@@ -123,29 +125,32 @@ Independentemente do tamanho do projeto, procuramos documentar as decisões de e
 
 ### English
 
-Most projects here follow a few simple principles.
+The projects in this workspace are diverse, but they are usually guided by the same engineering values.
 
-- We prefer simple solutions over unnecessary complexity.
-- We document decisions, not just code.
-- We share projects as they evolve.
-- We preserve engineering history whenever it adds value.
-- We avoid structure for the sake of structure.
-- We build practical solutions before polishing abstractions.
+- Simplicity is preferred over unnecessary complexity.
+- Technical decisions are documented, not just their outcomes.
+- Projects are shared as they evolve.
+- Engineering history is preserved whenever it provides context or future value.
+- Structure exists to support engineering, never the other way around.
+- Practical solutions come before elegant abstractions.
 
-These are not strict rules. They simply describe how we usually work.
+These values are descriptive rather than prescriptive. They reflect the experience accumulated across different projects, not a checklist applied to every repository.
 
-### Português
+<details>
+<summary><strong>Português (Brasil)</strong></summary>
 
-A maioria dos projetos daqui segue alguns princípios bastante simples.
+Os projetos deste workspace são bastante diferentes entre si, mas normalmente são guiados pelos mesmos valores de engenharia.
 
-- Preferimos soluções simples à complexidade desnecessária.
-- Documentamos decisões, não apenas código.
-- Compartilhamos projetos enquanto evoluem.
-- Preservamos o histórico de engenharia sempre que ele agrega valor.
-- Evitamos estruturas criadas apenas para seguir um padrão.
-- Preferimos resolver problemas reais antes de criar abstrações.
+- Preferimos simplicidade à complexidade desnecessária.
+- Documentamos decisões técnicas, não apenas seus resultados.
+- Compartilhamos projetos à medida que evoluem.
+- Preservamos o histórico de engenharia sempre que ele agrega contexto ou valor futuro.
+- A estrutura existe para servir à engenharia, nunca o contrário.
+- Soluções práticas vêm antes de abstrações elegantes.
 
-Esses não são dogmas. São apenas a forma como normalmente trabalhamos.
+Esses valores são descritivos, não prescritivos. Eles refletem a experiência acumulada em diferentes projetos, e não um checklist aplicado a todos os repositórios.
+
+</details>
 
 ---
 
@@ -155,28 +160,59 @@ Esses não são dogmas. São apenas a forma como normalmente trabalhamos.
 
 We believe engineering is an iterative process.
 
-Projects rarely begin as complete platforms. Most start as small experiments, grow through practical use, and mature one decision at a time.
+Projects rarely begin as complete platforms. Most start as small experiments, evolve through practical use, and mature one decision at a time.
 
-For that reason, we try to keep our repositories simple, our documentation proportional to the project's complexity, and our engineering decisions easy to understand.
+Our goal is to keep repositories as simple as possible, documentation proportional to each project's complexity, and engineering decisions easy to understand.
 
-Nothing here exists simply because "every project should have one."
+Nothing in this workspace exists simply because "every project should have one." Every component, document, script, and directory should exist because it serves a practical purpose.
 
-### Português
+<details>
+<summary><strong>Português (Brasil)</strong></summary>
 
 Acreditamos que engenharia é um processo iterativo.
 
-Projetos raramente nascem como grandes plataformas. A maioria começa como pequenos experimentos, cresce conforme é utilizada e amadurece uma decisão por vez.
+Projetos raramente nascem como plataformas completas. A maioria começa como pequenos experimentos, evolui por meio do uso prático e amadurece uma decisão de cada vez.
 
-Por isso, buscamos manter nossos repositórios simples, nossa documentação proporcional à complexidade de cada projeto e nossas decisões de engenharia fáceis de compreender.
+Nosso objetivo é manter os repositórios tão simples quanto possível, a documentação proporcional à complexidade de cada projeto e as decisões de engenharia fáceis de compreender.
 
-Nada existe aqui apenas porque "todo projeto deveria ter".
+Nada neste workspace existe apenas porque "todo projeto deveria ter". Cada componente, documento, script e diretório deve existir porque possui um propósito prático.
+
+</details>
 
 ---
 
 ## Workspace Architecture
 
-*(estrutura praticamente igual à atual)*
+The workspace is organized by engineering domain rather than by technology or programming language. Each directory groups projects with similar objectives, allowing the structure to evolve naturally as new ideas and research emerge.
 
+```text
+bressix-labs-workspace/
+├── 3D/                        # Functional 3D modeling and mechanical CAD assets.
+├── audio/                     # Audio engineering, DSP experiments, and acoustic studies.
+├── firmware/                  # Embedded firmware development (ESP32, CH552, AVR, RP2350).
+├── hardware/                  # Schematics, PCB layouts, hardware analysis, and pin mapping.
+├── system-hacking-n-tuning/   # Linux customization, system tuning, drivers, and platform optimization.
+├── tls-n-automation-scripts/  # PKI tooling, infrastructure utilities, automation scripts, and API integrations.
+│   ├── cnpj_query/            # Resilient multi-provider CNPJ acquisition engine.
+│   ├── globalsign-atlas-api/  # Atlas API integration modules.
+│   ├── globalsign-gcc-api/    # Legacy GCC API integration modules.
+│   ├── ssl-tls-auditing/      # TLS auditing and compliance validation tools.
+│   ├── tls-crt/               # X.509 certificate manipulation utilities.
+│   ├── tls-discovery/         # TLS asset discovery and inventory automation.
+│   └── tls-scripts/           # Core cryptographic and infrastructure helper scripts.
+└── WIP/                       # Experimental and unclassified development sandbox.
+```
+
+The structure is intentionally simple and may evolve as projects mature or new engineering domains are introduced.
+
+<details>
+<summary><strong>Português (Brasil)</strong></summary>
+
+O workspace é organizado por domínio de engenharia, e não por tecnologia ou linguagem de programação. Cada diretório reúne projetos com objetivos semelhantes, permitindo que a estrutura evolua naturalmente à medida que novas ideias e pesquisas surgem.
+
+A estrutura é intencionalmente simples e pode evoluir conforme os projetos amadurecem ou novos domínios de engenharia são incorporados.
+
+</details>
 ---
 
 ## License
