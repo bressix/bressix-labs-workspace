@@ -75,7 +75,27 @@ ESTA ISENÇÃO DE RESPONSABILIDADE APLICA-SE A TODO O WORKSPACE, EXCETO QUANDO U
 
 ## Security Notice / Aviso de Segurança
 
-*(pequena revisão de linguagem, sem alterar o conteúdo técnico)*
+### English
+
+No private keys, cryptographic seeds, production certificates, active service tokens, customer credentials, or confidential corporate information are stored or tracked within this repository.
+
+Development workflows follow repository sanitization practices, strict `.gitignore` policies, and isolated local environments to prevent accidental disclosure of sensitive information.
+
+Local engineering activities should rely on detached configuration files, environment variables, or `.env` templates that are never committed to version control.
+
+Repositories may intentionally include placeholder files, sample certificates, mock credentials, or template configurations for demonstration purposes. Such artifacts are non-functional and intended solely for development, testing, or documentation.
+
+---
+
+### Português
+
+Nenhuma chave privada, semente criptográfica, certificado de produção, token ativo de serviço, credencial de cliente ou informação corporativa confidencial é armazenada ou rastreada neste repositório.
+
+Os fluxos de desenvolvimento seguem práticas de higienização do repositório, políticas rigorosas de `.gitignore` e ambientes locais isolados para reduzir o risco de exposição acidental de informações sensíveis.
+
+As atividades locais de engenharia devem utilizar arquivos de configuração desacoplados, variáveis de ambiente ou templates `.env` que nunca sejam enviados ao controle de versão.
+
+Os repositórios podem conter arquivos de exemplo, certificados fictícios, credenciais simuladas ou configurações modelo destinados exclusivamente à demonstração, desenvolvimento, testes ou documentação. Esses artefatos não são funcionais e não representam credenciais reais.
 
 ---
 
