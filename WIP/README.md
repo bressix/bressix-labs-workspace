@@ -15,9 +15,9 @@
 
 ---
 
-## Proof of Concept / Em Desenvolvimento
+*As versões em PT-BR estão disponíveis nos blocos expansíveis de cada seção.*
 
-### English
+## Proof of Concept / Em Desenvolvimento
 
 This repository is the main engineering workspace for **bressix LABs**.
 
@@ -29,7 +29,8 @@ Not every repository follows the same structure, contains the same level of docu
 
 The purpose of this workspace is to build, document, and share engineering projects as they evolve.
 
-### Português
+<details>
+<summary><strong>PT-BR</strong></summary>
 
 Este repositório é o principal ambiente de engenharia da **bressix LABs**.
 
@@ -41,11 +42,9 @@ Nem todos os repositórios seguem a mesma estrutura, possuem o mesmo nível de d
 
 O propósito deste workspace é construir, documentar e compartilhar projetos de engenharia à medida que evoluem.
 
----
+</details>
 
-## Disclaimer / Isenção de Responsabilidade
-
-### English
+## Disclaimer
 
 #### NO WARRANTY
 
@@ -57,9 +56,8 @@ USING, COMPILING, FLASHING, MODIFYING, OR DEPLOYING ANY CODE, FIRMWARE, HARDWARE
 
 THIS DISCLAIMER APPLIES TO THE ENTIRE WORKSPACE UNLESS A SPECIFIC PROJECT EXPLICITLY STATES OTHERWISE.
 
----
-
-### Português
+<details>
+<summary><strong>PT-BR</strong></summary>
 
 #### SEM GARANTIAS
 
@@ -71,11 +69,9 @@ O USO, A COMPILAÇÃO, A GRAVAÇÃO (FLASHING), A MODIFICAÇÃO OU A IMPLANTAÇ�
 
 ESTA ISENÇÃO DE RESPONSABILIDADE APLICA-SE A TODO O WORKSPACE, EXCETO QUANDO UM PROJETO ESPECÍFICO DECLARAR EXPRESSAMENTE O CONTRÁRIO.
 
----
+</details>
 
-## Security Notice / Aviso de Segurança
-
-### English
+## Security Notice
 
 No private keys, cryptographic seeds, production certificates, active service tokens, customer credentials, or confidential corporate information are stored or tracked within this repository.
 
@@ -85,9 +81,8 @@ Local engineering activities should rely on detached configuration files, enviro
 
 Repositories may intentionally include placeholder files, sample certificates, mock credentials, or template configurations for demonstration purposes. Such artifacts are non-functional and intended solely for development, testing, or documentation.
 
----
-
-### Português
+<details>
+<summary><strong>PT-BR</strong></summary>
 
 Nenhuma chave privada, semente criptográfica, certificado de produção, token ativo de serviço, credencial de cliente ou informação corporativa confidencial é armazenada ou rastreada neste repositório.
 
@@ -97,33 +92,28 @@ As atividades locais de engenharia devem utilizar arquivos de configuração des
 
 Os repositórios podem conter arquivos de exemplo, certificados fictícios, credenciais simuladas ou configurações modelo destinados exclusivamente à demonstração, desenvolvimento, testes ou documentação. Esses artefatos não são funcionais e não representam credenciais reais.
 
----
+</details>
 
 ## Mission Statement
 
-### English
+bressix LABs exists to advance engineering through practical research, experimentation, and open documentation.
 
-bressix LABs exists to build, study, document, and share engineering projects.
-
-Our work spans multiple disciplines—including hardware, embedded systems, Linux, information security, PKI, automation, infrastructure, and applied research—but the goal remains the same: solving real problems, documenting technical decisions, and making that knowledge available to others.
+Our work spans multiple disciplines—including hardware, embedded systems, Linux, information security, PKI, automation, infrastructure, and applied research—but the mission remains the same: building practical solutions, documenting technical decisions, and sharing knowledge that others can study, reproduce, and extend.
 
 We believe engineering knowledge becomes more valuable when it is documented, reproducible, and shared.
 
----
+<details>
+<summary><strong>PT-BR</strong></summary>
 
-### Português
+A bressix LABs existe para promover a engenharia por meio de pesquisa prática, experimentação e documentação aberta.
 
-A bressix LABs existe para construir, estudar, documentar e compartilhar projetos de engenharia.
-
-Nosso trabalho abrange diversas áreas — incluindo hardware, sistemas embarcados, Linux, segurança da informação, PKI, automação, infraestrutura e pesquisa aplicada — mas o objetivo permanece o mesmo: resolver problemas reais, documentar decisões técnicas e tornar esse conhecimento acessível a outras pessoas.
+Nosso trabalho abrange diversas áreas — incluindo hardware, sistemas embarcados, Linux, segurança da informação, PKI, automação, infraestrutura e pesquisa aplicada — mas a missão permanece a mesma: desenvolver soluções práticas, documentar decisões técnicas e compartilhar conhecimento para que outras pessoas possam estudá-lo, reproduzi-lo e expandi-lo.
 
 Acreditamos que o conhecimento de engenharia se torna mais valioso quando é documentado, reproduzível e compartilhado.
 
----
+</details>
 
 ## Engineering Values
-
-### English
 
 The projects in this workspace are diverse, but they are usually guided by the same engineering values.
 
@@ -137,7 +127,7 @@ The projects in this workspace are diverse, but they are usually guided by the s
 These values are descriptive rather than prescriptive. They reflect the experience accumulated across different projects, not a checklist applied to every repository.
 
 <details>
-<summary><strong>Português (Brasil)</strong></summary>
+<summary><strong>PT-BR</strong></summary>
 
 Os projetos deste workspace são bastante diferentes entre si, mas normalmente são guiados pelos mesmos valores de engenharia.
 
@@ -152,38 +142,32 @@ Esses valores são descritivos, não prescritivos. Eles refletem a experiência 
 
 </details>
 
----
-
 ## Engineering Philosophy
-
-### English
 
 We believe engineering is an iterative process.
 
 Projects rarely begin as complete platforms. Most start as small experiments, evolve through practical use, and mature one decision at a time.
 
-Our goal is to keep repositories as simple as possible, documentation proportional to each project's complexity, and engineering decisions easy to understand.
+We strive to keep repositories as simple as possible, documentation proportional to each project's complexity, and engineering decisions easy to understand.
 
 Nothing in this workspace exists simply because "every project should have one." Every component, document, script, and directory should exist because it serves a practical purpose.
 
 <details>
-<summary><strong>Português (Brasil)</strong></summary>
+<summary><strong>PT-BR</strong></summary>
 
 Acreditamos que engenharia é um processo iterativo.
 
 Projetos raramente nascem como plataformas completas. A maioria começa como pequenos experimentos, evolui por meio do uso prático e amadurece uma decisão de cada vez.
 
-Nosso objetivo é manter os repositórios tão simples quanto possível, a documentação proporcional à complexidade de cada projeto e as decisões de engenharia fáceis de compreender.
+Buscamos manter os repositórios tão simples quanto possível, a documentação proporcional à complexidade de cada projeto e as decisões de engenharia fáceis de compreender.
 
 Nada neste workspace existe apenas porque "todo projeto deveria ter". Cada componente, documento, script e diretório deve existir porque possui um propósito prático.
 
 </details>
 
----
-
 ## Workspace Architecture
 
-The workspace is organized by engineering domain rather than by technology or programming language. Each directory groups projects with similar objectives, allowing the structure to evolve naturally as new ideas and research emerge.
+The workspace is organized by engineering domain rather than by technology or programming language. Each directory groups projects with similar objectives, allowing both the projects and the workspace to evolve naturally as new ideas, technologies, and research emerge.
 
 ```text
 bressix-labs-workspace/
@@ -206,17 +190,33 @@ bressix-labs-workspace/
 The structure is intentionally simple and may evolve as projects mature or new engineering domains are introduced.
 
 <details>
-<summary><strong>Português (Brasil)</strong></summary>
+<summary><strong>PT-BR</strong></summary>
 
-O workspace é organizado por domínio de engenharia, e não por tecnologia ou linguagem de programação. Cada diretório reúne projetos com objetivos semelhantes, permitindo que a estrutura evolua naturalmente à medida que novas ideias e pesquisas surgem.
+O workspace é organizado por domínio de engenharia, e não por tecnologia ou linguagem de programação. Cada diretório reúne projetos com objetivos semelhantes, permitindo que tanto os projetos quanto o próprio workspace evoluam naturalmente à medida que novas ideias, tecnologias e pesquisas surgem.
 
-A estrutura é intencionalmente simples e pode evoluir conforme os projetos amadurecem ou novos domínios de engenharia são incorporados.
+A estrutura é intencionalmente simples e pode evoluir conforme os projetos amadurecem ou novos domínios de engenharia sejam incorporados.
 
 </details>
----
 
 ## License
 
-GNU General Public License v3.0 (GPL-3.0)
+This workspace is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
-Copyright (C) 2026 bressix LABs
+Unless explicitly stated otherwise within an individual project, all source code, documentation, hardware designs, schematics, and other assets are distributed under the terms of the GPL-3.0.
+
+See the [`LICENSE`](LICENSE) file for the complete license text.
+
+<details>
+<summary><strong>PT-BR</strong></summary>
+
+Este workspace está licenciado sob a **GNU General Public License v3.0 (GPL-3.0)**.
+
+Salvo indicação explícita em contrário dentro de um projeto específico, todo o código-fonte, documentação, projetos de hardware, esquemáticos e demais ativos são distribuídos sob os termos da GPL-3.0.
+
+Consulte o arquivo [`LICENSE`](LICENSE) para o texto completo da licença.
+
+</details>
+
+---
+
+Copyright (C) 2026 **bressix LABs**
