@@ -9,8 +9,8 @@
 > Laboratório de Pesquisa e Desenvolvimento em Engenharia
 
 ![Environment](https://img.shields.io/badge/Environment-Parrot%20OS%20%7C%20Linux-blueviolet)
+![Status](https://img.shields.io/badge/Status-Active%20Research-orange)
 ![License](https://img.shields.io/badge/License-GPLv3-green)
-![Status](https://img.shields.io/badge/Workspace-Active%20Research-orange)
 ![Security](https://img.shields.io/badge/Security-Sanitized-success)
 
 ---
