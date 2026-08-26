@@ -1,0 +1,981 @@
+# MICRO KEYBOARD PLATFORM (MKP)
+
+## ELECTRICAL SPECIFICATION
+
+**Revision B — Consolidated Electrical Architecture**
+**Última atualização:** 26/08/2026
+**Status:** ELECTRICAL FREEZE — footprints aguardando validação física
+
+---
+
+# 1. OBJETIVO
+
+Este documento define a especificação elétrica oficial da **Micro Keyboard Platform — MKP Revision B**.
+
+Serve como fonte de referência para:
+
+* esquemático KiCad;
+* PCB;
+* roteamento;
+* firmware;
+* montagem;
+* testes;
+* validação do protótipo;
+* documentação futura.
+
+A arquitetura elétrica descrita neste documento é considerada congelada para a Revision B.
+
+Alterações arquiteturais posteriores deverão ser documentadas através de nova revisão.
+
+---
+
+# 2. CONTROLADOR PRINCIPAL
+
+## 2.1 MCU
+
+Módulo utilizado:
+
+**Waveshare RP2040-Zero**
+
+Características relevantes:
+
+* RP2040 dual-core Cortex-M0+;
+* lógica de 3,3 V;
+* USB nativo;
+* USB-C integrado;
+* Flash integrada;
+* GPIOs suficientes para matriz e interfaces auxiliares.
+
+O módulo permanece substituível como unidade independente da PCB principal.
+
+---
+
+# 3. ARQUITETURA GERAL
+
+A Revision B é composta pelos seguintes blocos:
+
+```text
+                    USB-C
+                      │
+                ┌─────▼─────┐
+                │ RP2040    │
+                │   ZERO    │
+                └─────┬─────┘
+                      │
+         ┌────────────┼────────────┐
+         │            │            │
+         ▼            ▼            ▼
+     MATRIZ 5×10   HOST I/O     NeoPixel
+     50 teclas    UART/I2C/SPI    GP29
+```
+
+O MKP executa localmente:
+
+* varredura da matriz;
+* debounce;
+* interpretação das teclas;
+* layers;
+* geração de eventos;
+* comunicação com o host.
+
+O sistema hospedeiro **não controla diretamente a matriz**.
+
+---
+
+# 4. MAPA OFICIAL DE GPIO
+
+## 4.1 Matriz
+
+### ROW
+
+| GPIO | Net  | Função  |
+| ---- | ---- | ------- |
+| GP0  | ROW0 | Linha 0 |
+| GP1  | ROW1 | Linha 1 |
+| GP2  | ROW2 | Linha 2 |
+| GP3  | ROW3 | Linha 3 |
+| GP4  | ROW4 | Linha 4 |
+
+### COL
+
+| GPIO | Net  | Função   |
+| ---- | ---- | -------- |
+| GP5  | COL0 | Coluna 0 |
+| GP6  | COL1 | Coluna 1 |
+| GP7  | COL2 | Coluna 2 |
+| GP8  | COL3 | Coluna 3 |
+| GP9  | COL4 | Coluna 4 |
+| GP10 | COL5 | Coluna 5 |
+| GP11 | COL6 | Coluna 6 |
+| GP12 | COL7 | Coluna 7 |
+| GP13 | COL8 | Coluna 8 |
+| GP14 | COL9 | Coluna 9 |
+
+---
+
+## 4.2 Interface HOST
+
+| GPIO | J1 | Função lógica       |
+| ---- | -: | ------------------- |
+| GP15 |  1 | HOST_SIG1           |
+| GP26 |  2 | HOST_SIG2           |
+| GP27 |  3 | HOST_SIG3           |
+| GP28 |  4 | HOST_SIG4           |
+| GND  |  5 | Referência elétrica |
+
+---
+
+## 4.3 Indicador RGB
+
+| GPIO | Função        |
+| ---- | ------------- |
+| GP29 | NEOPIXEL_DATA |
+
+GP29 possui função exclusiva na Revision B:
+
+**controle do NeoPixel externo.**
+
+Não existe mais:
+
+* `PROTO_ADC`;
+* divisor resistivo;
+* identificação de protocolo por ADC;
+* jumpers de seleção de protocolo.
+
+---
+
+# 5. MATRIZ DO TECLADO
+
+A matriz elétrica possui:
+
+* **5 linhas**;
+* **10 colunas**;
+* **50 posições elétricas**;
+* **50 switches físicos**.
+
+Referências:
+
+```text
+SW1 ... SW50
+D1  ... D50
+```
+
+Cada switch possui um diodo individual.
+
+---
+
+# 6. MAPA FÍSICO/FUNCIONAL
+
+As quatro primeiras linhas formam o bloco alfanumérico principal:
+
+```text
+ROW0    1    2    3    4    5    6    7    8    9    0
+
+ROW1    Q    W    E    R    T    Y    U    I    O    P
+
+ROW2    A    S    D    F    G    H    J    K    L    ENT
+
+ROW3    FN   CAPS Z    X    C    V    B    N    M    CTRL
+```
+
+A quinta linha utiliza todas as dez posições elétricas:
+
+```text
+SW41    A
+SW42    B
+SW43    X
+SW44    Y
+
+SW45
+SW46
+SW47
+SW48    Direcionais
+
+SW49    Função reservada / ainda não definida
+
+SW50    SPACE
+```
+
+A associação definitiva de `SW45...SW48` a:
+
+* UP;
+* DOWN;
+* LEFT;
+* RIGHT;
+
+será definida no keymap/firmware conforme a orientação física final.
+
+---
+
+# 7. SWITCHES
+
+Tipo selecionado:
+
+**Tact switch SMD**
+
+Dimensões nominais:
+
+```text
+4,5 × 4,5 × 5,0 mm
+```
+
+Características:
+
+* 4 terminais;
+* contatos internamente duplicados em pares;
+* montagem SMD;
+* altura total nominal: 5 mm.
+
+Pitch horizontal principal:
+
+**8,0 mm entre centros.**
+
+A altura de 5 mm foi escolhida também para preservar compatibilidade mecânica com futura faceplate.
+
+---
+
+# 8. DIODOS DA MATRIZ
+
+## 8.1 Componente
+
+Componente selecionado:
+
+**1N4148W**
+
+Encapsulamento:
+
+**SOD-123**
+
+Quantidade:
+
+**50 unidades por PCB.**
+
+---
+
+## 8.2 Orientação elétrica
+
+O esquemático atual utiliza:
+
+```text
+ROW ─── A ──|>|── K ── SW ── COL
+```
+
+Onde:
+
+* **A / ânodo** → ROW;
+* **K / cátodo** → switch/coluna;
+* faixa física do diodo → cátodo.
+
+A orientação do diodo é considerada parte da arquitetura congelada.
+
+---
+
+# 9. MÉTODO DE VARREDURA DA MATRIZ
+
+A lógica de firmware deve acompanhar a polaridade física dos diodos.
+
+## 9.1 ROW
+
+As ROWs são configuradas como:
+
+**ENTRADAS DIGITAIS COM PULL-UP.**
+
+---
+
+## 9.2 COL
+
+As COLs são utilizadas como linhas de acionamento.
+
+Durante a varredura:
+
+1. uma coluna é ativada por vez;
+2. a coluna ativa é colocada em **LOW**;
+3. as ROWs são lidas;
+4. uma ROW em LOW indica tecla pressionada;
+5. o processo é repetido para as dez colunas.
+
+Representação:
+
+```text
+ROW
+ │
+ pull-up
+ │
+ HIGH
+ │
+ ├── A |>| K ── SW ── COL ativa LOW
+ │
+ └── leitura
+
+SW pressionado:
+
+ROW → LOW
+```
+
+Portanto:
+
+```text
+COL = OUTPUT / ACTIVE LOW
+
+ROW = INPUT / PULL-UP
+
+ROW LOW = TECLA PRESSIONADA
+```
+
+Essa lógica substitui definitivamente a estratégia anterior de `ROW output / COL input`.
+
+---
+
+# 10. INTERFACE HOST — J1
+
+J1 possui:
+
+**5 vias**
+
+```text
+J1.1    HOST_SIG1 / GP15
+J1.2    HOST_SIG2 / GP26
+J1.3    HOST_SIG3 / GP27
+J1.4    HOST_SIG4 / GP28
+J1.5    GND
+```
+
+O conector HOST:
+
+* transporta sinais;
+* fornece referência GND;
+* **não fornece alimentação ao host**.
+
+O host deve possuir alimentação própria.
+
+---
+
+# 11. UART
+
+Modo UART:
+
+```text
+J1.1 / GP15 = TX da MKP
+J1.2 / GP26 = RX da MKP
+J1.3        = não utilizado
+J1.4        = não utilizado
+J1.5        = GND
+```
+
+Fluxo:
+
+```text
+MKP TX ───────► RX HOST
+
+MKP RX ◄─────── TX HOST
+```
+
+Parâmetros como baud rate pertencem ao firmware.
+
+---
+
+# 12. I2C
+
+Modo I2C:
+
+```text
+J1.3 / GP27 = SDA
+J1.4 / GP28 = SCL
+J1.5        = GND
+```
+
+Configuração prevista:
+
+```text
+HOST = MASTER
+MKP  = SLAVE/PERIPHERAL
+```
+
+Os pull-ups do barramento I2C:
+
+* devem ser fornecidos pelo host; ou
+* adicionados externamente conforme a aplicação.
+
+A Revision B não incorpora pull-ups I2C fixos.
+
+---
+
+# 13. SPI
+
+Modo SPI:
+
+```text
+J1.1 / GP15 = MOSI
+J1.2 / GP26 = MISO
+J1.3 / GP27 = SCK
+J1.4 / GP28 = CS
+J1.5        = GND
+```
+
+Perspectiva:
+
+```text
+HOST = MASTER
+MKP  = SLAVE/PERIPHERAL
+```
+
+Direções:
+
+```text
+MOSI    HOST ───► MKP
+
+MISO    HOST ◄─── MKP
+
+SCK     HOST ───► MKP
+
+CS      HOST ───► MKP
+```
+
+---
+
+# 14. SELEÇÃO DO PROTOCOLO
+
+A Revision B **não possui seleção física de protocolo**.
+
+Foram removidos:
+
+* solder bridges;
+* resistores 0 Ω de seleção;
+* divisor ADC;
+* jumpers PROTO;
+* modo automático por GP29.
+
+UART, I2C ou SPI são selecionados exclusivamente pelo:
+
+**firmware.**
+
+O mesmo hardware pode executar firmware diferente sem alteração física da PCB.
+
+---
+
+# 15. NEOPIXEL
+
+## 15.1 Componente
+
+LED RGB endereçável:
+
+**WS2812B-5050**
+
+Footprint de referência:
+
+```text
+LED_SMD:
+LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm
+```
+
+Pinagem utilizada:
+
+| Pino | Função  |
+| ---: | ------- |
+|    1 | VDD     |
+|    2 | DOUT    |
+|    3 | VSS/GND |
+|    4 | DIN     |
+
+---
+
+## 15.2 Ligações
+
+```text
+GP29 ── R1 330R ── DIN / D51.4
+
++5V ─────────────── VDD / D51.1
+
+GND ─────────────── VSS / D51.3
+
+DOUT / D51.2 ────── NC
+```
+
+---
+
+## 15.3 Resistor de dados
+
+```text
+R1 = 330 Ω
+```
+
+Função:
+
+* amortecimento do sinal;
+* redução de ringing;
+* proteção da entrada DIN.
+
+Footprint selecionado:
+
+**2010 SMD**
+
+O footprint grande permite também montagem manual facilitada.
+
+---
+
+## 15.4 Desacoplamento
+
+```text
+C1 = 100 nF
+```
+
+Ligação:
+
+```text
++5V ── C1 ── GND
+```
+
+Footprint:
+
+**1206 SMD**
+
+C1 deve ficar eletricamente e fisicamente próximo ao WS2812B.
+
+---
+
+## 15.5 Nível lógico
+
+O RP2040 opera em lógica de 3,3 V.
+
+A Revision B utiliza inicialmente:
+
+```text
+GP29 3.3V
+   │
+ 330R
+   │
+WS2812B DIN
+```
+
+Essa configuração deverá ser validada no primeiro protótipo com o lote real de WS2812B-5050.
+
+Caso seja identificada margem lógica insuficiente, uma revisão futura poderá incorporar level shifting dedicado.
+
+---
+
+# 16. ALIMENTAÇÃO
+
+A MKP possui duas possibilidades de alimentação:
+
+1. USB-C do RP2040-Zero;
+2. entrada externa J2.
+
+---
+
+# 17. ALIMENTAÇÃO USB
+
+O RP2040-Zero recebe alimentação através de sua USB-C integrada.
+
+O módulo gera internamente a alimentação lógica de 3,3 V.
+
+A MKP não modifica o circuito interno de regulação do módulo.
+
+---
+
+# 18. ALIMENTAÇÃO EXTERNA — J2
+
+J2 possui:
+
+**2 vias**
+
+Tipo previsto:
+
+**JST-PH 2.0 mm, horizontal**
+
+Pinagem:
+
+```text
+J2.1    +5V_EXT
+J2.2    GND
+```
+
+A entrada externa deve ser:
+
+**5 V regulados.**
+
+---
+
+# 19. PROTEÇÃO DA ENTRADA EXTERNA
+
+A entrada externa possui um diodo Schottky em série:
+
+```text
+J2.1 +5V_EXT
+      │
+      A
+     D52
+      K
+      │
+     +5V_MKP
+```
+
+Componente previsto:
+
+**1N5819 ou equivalente Schottky.**
+
+Orientação obrigatória:
+
+```text
+ÂNODO   → +5V_EXT / J2
+
+CÁTODO  → +5V_MKP
+```
+
+Objetivos:
+
+* reduzir retorno de corrente em direção à fonte externa;
+* permitir coexistência segura com alimentação USB dentro das condições previstas;
+* proteger contra caminhos indesejados entre fontes.
+
+A entrada J2 deve permanecer restrita a alimentação regulada nominal de 5 V.
+
+O RP2040-Zero possui conexão direta entre seu caminho VSYS/VUSB e o pino de alimentação exposto; portanto fontes externas não devem ser conectadas sem isolamento apropriado.
+
+---
+
+# 20. ALIMENTAÇÃO DO HOST
+
+J1 não possui:
+
+* +5 V;
+* +3,3 V;
+* VSYS.
+
+A MKP:
+
+**não alimenta o host.**
+
+O host deve possuir alimentação independente.
+
+O GND deve ser compartilhado para referência elétrica das interfaces UART/I2C/SPI.
+
+---
+
+# 21. NET NAMES OFICIAIS
+
+## Matriz
+
+```text
+ROW0
+ROW1
+ROW2
+ROW3
+ROW4
+
+COL0
+COL1
+COL2
+COL3
+COL4
+COL5
+COL6
+COL7
+COL8
+COL9
+```
+
+## Host
+
+```text
+HOST_SIG1
+HOST_SIG2
+HOST_SIG3
+HOST_SIG4
+```
+
+## Indicador
+
+```text
+NEOPIXEL_DATA
+```
+
+## Alimentação
+
+```text
++5V_EXT
++5V
++3V3
+GND
+```
+
+---
+
+# 22. ORGANIZAÇÃO DAS FACES DA PCB
+
+A Revision B abandona os antigos footprints dual-face.
+
+## TOP / F.Cu
+
+Devem permanecer:
+
+* SW1...SW50;
+* WS2812B.
+
+A face superior é prioritariamente a interface física com o usuário.
+
+---
+
+## BOTTOM / B.Cu
+
+Devem permanecer:
+
+* RP2040-Zero;
+* D1...D50;
+* R1;
+* C1;
+* D52;
+* J1;
+* J2;
+* demais passivos e conectores.
+
+---
+
+# 23. PCB
+
+Construção prevista:
+
+```text
+Material:       FR-4
+Camadas:        2
+Espessura:      1,6 mm
+Largura:        80 mm
+```
+
+A altura final segue o layout mecânico consolidado no arquivo KiCad.
+
+---
+
+# 24. REGRAS DE ROTEAMENTO
+
+Valores de referência:
+
+```text
+Sinais:
+0,20 mm ou superior
+
+Alimentação:
+0,40 mm ou superior
+
+Clearance:
+conforme capacidade do fabricante,
+mantendo no mínimo as regras definidas no KiCad
+```
+
+A camada inferior deve possuir plano de GND tão contínuo quanto possível.
+
+Evitar:
+
+* ilhas de cobre desconectadas;
+* cortes desnecessários no retorno;
+* loops extensos;
+* vias desnecessárias.
+
+A qualidade elétrica tem prioridade sobre a minimização absoluta do número de vias.
+
+---
+
+# 25. FIDUCIAIS
+
+A PCB possui:
+
+**3 fiduciais globais.**
+
+Objetivo:
+
+* alinhamento óptico;
+* compatibilidade futura com montagem automatizada.
+
+Eles devem:
+
+* permanecer livres de componentes;
+* possuir contraste adequado;
+* não ser cobertos por serigrafia.
+
+---
+
+# 26. FOOTPRINTS
+
+Os footprints atuais são considerados:
+
+**CANDIDATOS PARA A REVISION B.**
+
+Eles somente serão considerados mecanicamente congelados após comparação com os componentes físicos adquiridos.
+
+Devem ser validados:
+
+* tact switch 4,5 × 4,5 × 5 mm;
+* RP2040-Zero;
+* WS2812B-5050;
+* 1N4148W SOD-123;
+* conector HOST 5P;
+* JST-PH 2P;
+* componentes auxiliares relevantes.
+
+---
+
+# 27. COMPATIBILIDADE DE FIRMWARE
+
+Frameworks previstos:
+
+* QMK;
+* KMK;
+* CircuitPython HID;
+* Raspberry Pi Pico SDK;
+* firmware próprio.
+
+O firmware deve implementar no mínimo:
+
+1. matriz 5×10;
+2. scan `COL active LOW / ROW pull-up`;
+3. debounce;
+4. keymap configurável;
+5. layers;
+6. USB HID quando aplicável;
+7. protocolo HOST configurável;
+8. controle do NeoPixel.
+
+---
+
+# 28. RESPONSABILIDADES DO FIRMWARE
+
+O firmware deve:
+
+* inicializar a matriz;
+* realizar scan;
+* aplicar debounce;
+* interpretar teclas;
+* gerenciar layers;
+* processar teclas especiais;
+* configurar UART/I2C/SPI quando necessário;
+* transmitir eventos ao host;
+* controlar o NeoPixel;
+* operar como USB HID quando configurado.
+
+A escolha de protocolo não depende de configuração elétrica na PCB.
+
+---
+
+# 29. ESTADO DO PROJETO
+
+## Concluído
+
+* [x] Arquitetura elétrica.
+* [x] GPIO mapping.
+* [x] Matriz 5×10.
+* [x] 50 switches.
+* [x] 50 diodos.
+* [x] Interface HOST.
+* [x] NeoPixel.
+* [x] Alimentação externa.
+* [x] Proteção Schottky.
+* [x] Esquemático.
+* [x] Netlist auditada.
+* [x] Placement preliminar.
+* [x] Organização TOP/BOTTOM.
+* [x] Seleção dos principais componentes.
+
+## Pendente
+
+* [ ] Recebimento dos componentes.
+* [ ] Validação física dos footprints.
+* [ ] Congelamento do placement.
+* [ ] Routing.
+* [ ] DRC.
+* [ ] Gerbers.
+* [ ] Fabricação do protótipo.
+* [ ] Montagem.
+* [ ] Bring-up elétrico.
+* [ ] Validação da matriz.
+* [ ] Validação do NeoPixel.
+* [ ] Validação USB.
+* [ ] Validação UART.
+* [ ] Validação I2C.
+* [ ] Validação SPI.
+* [ ] Firmware inicial.
+
+---
+
+# 30. CONTROLE DE REVISÃO
+
+**Documento:** MKP Electrical Specification
+**Hardware:** Revision B
+**Data:** 26/08/2026
+
+Status:
+
+**ELECTRICAL ARCHITECTURE FROZEN**
+
+Com a seguinte ressalva:
+
+> Os footprints mecânicos permanecem sujeitos a validação física antes do routing final.
+
+Mudanças que alterem:
+
+* GPIO;
+* topologia da matriz;
+* alimentação;
+* interfaces;
+* quantidade de teclas;
+* polaridade dos diodos;
+* arquitetura de comunicação;
+
+devem gerar nova revisão ou revisão intermediária formalmente documentada.
+
+---
+
+# 31. PRÓXIMA ETAPA
+
+```text
+COMPONENTES CHEGAM
+       │
+       ▼
+VALIDAÇÃO DOS FOOTPRINTS
+       │
+       ▼
+PLACEMENT FINAL
+       │
+       ▼
+ROUTING
+       │
+       ▼
+DRC
+       │
+       ▼
+GERBERS
+       │
+       ▼
+REV.B PROTOTYPE
+```
+
+---
+
+# CONCLUSÃO
+
+A Micro Keyboard Platform Revision B possui arquitetura elétrica definida e simplificada.
+
+A evolução do projeto eliminou complexidade que não apresentava benefício prático:
+
+* seleção de protocolo por hardware;
+* ADC de configuração;
+* jumpers PROTO;
+* dual footprints.
+
+A arquitetura atual concentra:
+
+* matriz 5×10;
+* 50 teclas;
+* RP2040-Zero;
+* USB HID;
+* UART/I2C/SPI;
+* NeoPixel;
+* alimentação USB ou externa;
+* firmware como camada de configuração.
+
+A Revision B está pronta para a fase de validação mecânica dos componentes e posterior roteamento da PCB.
+
+---
+
+**MICRO KEYBOARD PLATFORM — MKP**
+**ELECTRICAL SPECIFICATION**
+**REVISION B — 26/08/2026**
+

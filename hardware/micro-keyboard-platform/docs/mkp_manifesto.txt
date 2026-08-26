@@ -1,0 +1,542 @@
+================================================================================
+MICRO KEYBOARD PLATFORM (MKP)
+PROJECT MANIFESTO
+Revision B
+Última atualização: 26/08/2026
+================================================================================
+
+
+1. O QUE É O MKP
+================================================================================
+
+O Micro Keyboard Platform (MKP) é uma plataforma compacta e modular de
+entrada física baseada em teclado.
+
+Embora sua função primária seja atuar como teclado, o MKP não foi concebido
+como uma simples matriz de teclas.
+
+O MKP é um dispositivo ativo e autônomo, responsável por:
+
+* Ler sua própria matriz de teclas.
+* Processar eventos de entrada.
+* Implementar layers e funções especiais.
+* Comunicar-se diretamente com diferentes sistemas hospedeiros.
+* Operar como dispositivo USB HID quando conectado diretamente por USB.
+* Disponibilizar interfaces embarcadas para integração com outros sistemas.
+
+A matriz pertence ao MKP.
+
+O host não precisa conhecer nem controlar diretamente as linhas e colunas
+do teclado.
+
+
+================================================================================
+2. MOTIVAÇÃO
+================================================================================
+
+O MKP nasceu da necessidade de um teclado físico compacto para sistemas
+embarcados.
+
+A ideia original surgiu associada a um equipamento específico, mas durante
+o desenvolvimento ficou evidente que limitar o teclado a um único host
+reduziria significativamente sua utilidade.
+
+A arquitetura evoluiu, portanto, para uma plataforma independente.
+
+O objetivo passou a ser permitir que o mesmo módulo de teclado pudesse ser
+utilizado em:
+
+* Microcontroladores.
+* SBCs.
+* Terminais portáteis.
+* Cyberdecks.
+* Equipamentos de comunicação.
+* Instrumentação.
+* Projetos experimentais.
+* Computadores convencionais através de USB HID.
+
+O MKP deve ser reutilizável sem exigir redesenho da matriz ou da PCB para
+cada novo projeto.
+
+
+================================================================================
+3. PRINCÍPIO FUNDAMENTAL
+================================================================================
+
+O princípio central do MKP é:
+
+                 O MKP É UM TECLADO,
+                 NÃO UMA MATRIZ DE TECLAS.
+
+Isso significa que a inteligência necessária para interpretar o teclado
+permanece dentro da própria plataforma.
+
+O host recebe eventos ou informações já processadas através da interface
+de comunicação escolhida.
+
+Essa separação reduz:
+
+* Dependência do hardware hospedeiro.
+* Número de GPIOs exigidos do host.
+* Complexidade de integração.
+* Necessidade de redesenhar teclados para projetos diferentes.
+
+E aumenta:
+
+* Portabilidade.
+* Reutilização.
+* Modularidade.
+* Independência de plataforma.
+
+
+================================================================================
+4. ARQUITETURA
+================================================================================
+
+A Revision B utiliza um módulo RP2040-Zero como controlador principal.
+
+O controlador é responsável por:
+
+* Varredura da matriz.
+* Debounce.
+* Interpretação das teclas.
+* Layers.
+* Funções especiais.
+* USB HID.
+* Comunicação com sistemas hospedeiros.
+* Controle do indicador RGB endereçável.
+
+A arquitetura separa conceitualmente três blocos:
+
+                     +------------------+
+                     |      TECLAS      |
+                     |     MATRIZ       |
+                     +--------+---------+
+                              |
+                              v
+                     +------------------+
+                     |   RP2040-ZERO    |
+                     |                  |
+                     | Scan / Debounce  |
+                     | Keymap / Layers  |
+                     | Protocol / HID   |
+                     +----+--------+----+
+                          |        |
+                     USB HID     HOST I/O
+                          |        |
+                          v        v
+                       Sistemas hospedeiros
+
+
+================================================================================
+5. MATRIZ DE TECLAS
+================================================================================
+
+A Revision B implementa uma matriz elétrica de:
+
+* 5 linhas.
+* 10 colunas.
+* 50 posições.
+* 50 switches físicos.
+
+Cada switch possui um diodo dedicado.
+
+A disposição física combina:
+
+* Bloco alfanumérico QWERTY.
+* Teclas modificadoras.
+* Teclas direcionais.
+* Botões A/B/X/Y.
+* Space.
+* Tecla adicional reservada para função definida por firmware.
+
+A matriz foi projetada para permitir utilização tanto como teclado
+convencional quanto como interface de controle para sistemas embarcados.
+
+
+================================================================================
+6. INTERFACE COM O HOST
+================================================================================
+
+O MKP possui duas formas fundamentais de comunicação com sistemas externos.
+
+
+6.1 USB
+--------------------------------------------------------------------------------
+
+A interface USB nativa do RP2040-Zero permite que o MKP opere diretamente
+como dispositivo USB HID.
+
+Nesse modo, nenhum hardware intermediário é necessário.
+
+
+6.2 INTERFACE HOST EMBARCADA
+--------------------------------------------------------------------------------
+
+Uma interface dedicada disponibiliza sinais do RP2040 para integração com
+outros sistemas embarcados.
+
+Os protocolos previstos incluem:
+
+* UART.
+* I2C.
+* SPI.
+
+A configuração do protocolo é responsabilidade do firmware.
+
+A Revision B não utiliza seleção física de protocolo através de jumpers,
+solder bridges ou divisores resistivos.
+
+Essa decisão simplifica:
+
+* Esquemático.
+* PCB.
+* Montagem.
+* Firmware de detecção.
+* Manutenção.
+
+
+================================================================================
+7. FILOSOFIA DE GPIO
+================================================================================
+
+Os GPIOs utilizados pela matriz são dedicados exclusivamente ao teclado.
+
+Os GPIOs utilizados para comunicação com o host permanecem separados da
+matriz.
+
+Nenhum GPIO da matriz deve depender do sistema hospedeiro.
+
+O GP29, anteriormente reservado para identificação analógica de protocolo,
+passou a controlar o indicador RGB endereçável da plataforma.
+
+Essa mudança elimina o antigo circuito PROTO_ADC e devolve ao firmware a
+responsabilidade pela configuração da interface de comunicação.
+
+
+================================================================================
+8. INDICADOR RGB
+================================================================================
+
+A Revision B incorpora um LED RGB endereçável WS2812B-5050.
+
+O indicador é controlado pelo RP2040 através do GP29.
+
+Sua função não é rigidamente definida pelo hardware.
+
+O firmware pode utilizá-lo para indicar, por exemplo:
+
+* Estado da plataforma.
+* Inicialização.
+* Modo de comunicação.
+* Layer ativa.
+* Caps Lock.
+* Erros.
+* Atividade.
+* Estado definido pela aplicação hospedeira.
+
+O NeoPixel é, portanto, uma interface visual genérica da plataforma.
+
+
+================================================================================
+9. ALIMENTAÇÃO
+================================================================================
+
+O MKP deve ser capaz de operar tanto através da alimentação fornecida pelo
+módulo RP2040-Zero via USB quanto através de uma entrada de alimentação
+dedicada.
+
+A alimentação externa utiliza conector próprio e permanece eletricamente
+separada da interface HOST.
+
+O conector HOST transporta:
+
+* Sinais.
+* GND.
+
+Ele não existe para alimentar o sistema hospedeiro.
+
+A arquitetura deve evitar retorno de corrente entre fontes de alimentação.
+
+Proteções e detalhes elétricos pertencem à Electrical Specification.
+
+
+================================================================================
+10. FILOSOFIA MECÂNICA
+================================================================================
+
+O MKP segue a filosofia:
+
+                       MECHANICAL FIRST
+
+A geometria do teclado é definida prioritariamente por:
+
+* Ergonomia.
+* Dimensões físicas.
+* Espaçamento entre teclas.
+* Área disponível.
+* Integração mecânica.
+
+O roteamento elétrico deve adaptar-se à geometria do teclado, e não o
+contrário.
+
+Na Revision B:
+
+* A PCB possui largura aproximada de 80 mm.
+* Os switches principais utilizam pitch horizontal de 8 mm.
+* Os tact switches possuem corpo de 4,5 x 4,5 mm.
+* A altura nominal selecionada é 5,0 mm.
+* A PCB prevista utiliza FR-4 de 1,6 mm.
+
+
+================================================================================
+11. ORGANIZAÇÃO DAS FACES
+================================================================================
+
+A Revision B abandona a abordagem experimental de footprints duplicados
+para permitir montagem dos mesmos componentes em qualquer face da PCB.
+
+A organização passa a ser deliberada.
+
+FACE SUPERIOR:
+
+* Switches.
+* NeoPixel.
+
+FACE INFERIOR:
+
+* RP2040-Zero.
+* Diodos.
+* Resistores.
+* Capacitores.
+* Conectores.
+* Demais componentes eletrônicos.
+
+Essa organização mantém a superfície de interação limpa e facilita futura
+integração mecânica.
+
+
+================================================================================
+12. FACEPLATE E MECÂNICA FUTURA
+================================================================================
+
+A arquitetura física permite o desenvolvimento futuro de uma faceplate.
+
+A faceplate poderá:
+
+* Ocultar o corpo dos tact switches.
+* Proteger a PCB.
+* Melhorar o acabamento.
+* Guiar os dedos.
+* Servir como elemento estrutural do conjunto.
+
+A escolha dos tact switches de 5,0 mm preserva margem mecânica para essa
+possibilidade.
+
+A faceplate não faz parte da validação elétrica inicial da Revision B.
+
+
+================================================================================
+13. PRINCÍPIO DE MODULARIDADE
+================================================================================
+
+O MKP deve permanecer independente do equipamento em que for instalado.
+
+Nenhum projeto hospedeiro específico deve determinar permanentemente:
+
+* Keymap.
+* Protocolo.
+* Função das teclas especiais.
+* Função do indicador RGB.
+* Layers.
+* Comportamento da interface.
+
+Essas características pertencem ao firmware ou à aplicação.
+
+O hardware define capacidades.
+
+O firmware define comportamento.
+
+
+================================================================================
+14. PRINCÍPIO DE SIMPLICIDADE
+================================================================================
+
+Durante o desenvolvimento da Revision B foram exploradas soluções que
+aumentavam a flexibilidade física da plataforma, incluindo:
+
+* Footprints dual-face.
+* Seleção física de protocolo.
+* Identificação de protocolo através de ADC.
+* Divisor resistivo.
+* Jumpers de configuração.
+
+Essas soluções foram posteriormente removidas.
+
+A decisão representa um princípio importante do projeto:
+
+        FLEXIBILIDADE ÚTIL DEVE SER PRESERVADA.
+
+        COMPLEXIDADE SEM BENEFÍCIO PRÁTICO DEVE SER REMOVIDA.
+
+A Revision B privilegia uma PCB mais simples e transfere comportamentos
+configuráveis para o firmware sempre que isso não compromete a capacidade
+elétrica da plataforma.
+
+
+================================================================================
+15. OPEN HARDWARE
+================================================================================
+
+O MKP é desenvolvido como projeto Open Hardware.
+
+O repositório deve conter informação suficiente para:
+
+* Compreender a arquitetura.
+* Reproduzir a PCB.
+* Fabricar a placa.
+* Montar o hardware.
+* Desenvolver firmware.
+* Criar variantes.
+* Integrar o MKP a novos projetos.
+
+Os arquivos de projeto devem permanecer independentes de caminhos locais
+ou bibliotecas privadas sempre que possível.
+
+
+================================================================================
+16. DESENVOLVIMENTO
+================================================================================
+
+O desenvolvimento segue um processo incremental:
+
+                     projetar
+                         |
+                         v
+                     validar
+                         |
+                         v
+                      testar
+                         |
+                         v
+                     corrigir
+                         |
+                         +--------> repetir
+
+Decisões devem ser validadas fisicamente antes de serem consideradas
+definitivas quando dependerem de tolerâncias mecânicas ou componentes
+reais.
+
+
+================================================================================
+17. ESTADO DA REVISION B
+================================================================================
+
+Em 26/08/2026:
+
+[X] Arquitetura geral definida.
+
+[X] Matriz 5 x 10 definida.
+
+[X] 50 switches físicos definidos.
+
+[X] Controlador RP2040-Zero definido.
+
+[X] GPIOs definidos.
+
+[X] Esquemático desenvolvido.
+
+[X] Placement preliminar desenvolvido.
+
+[X] Interface HOST definida.
+
+[X] Entrada de alimentação definida.
+
+[X] NeoPixel incorporado.
+
+[X] Circuito PROTO_ADC removido.
+
+[X] Dual footprints abandonados.
+
+[X] Organização TOP/BOTTOM definida.
+
+[X] Tact switch 4,5 x 4,5 x 5,0 mm selecionado.
+
+[X] Componentes principais selecionados.
+
+[ ] Footprints validados contra componentes físicos.
+
+[ ] Placement final congelado.
+
+[ ] PCB roteada.
+
+[ ] DRC final executado.
+
+[ ] Gerbers gerados.
+
+[ ] Protótipo fabricado.
+
+[ ] Hardware validado.
+
+[ ] Firmware inicial implementado.
+
+
+A próxima etapa física é:
+
+        RECEBER COMPONENTES
+                 |
+                 v
+        VALIDAR FOOTPRINTS
+                 |
+                 v
+        CONGELAR PLACEMENT
+                 |
+                 v
+             ROUTING
+                 |
+                 v
+               DRC
+                 |
+                 v
+             GERBERS
+                 |
+                 v
+            PROTÓTIPO
+
+
+================================================================================
+18. DIRETRIZ FINAL
+================================================================================
+
+O MKP deve continuar sendo uma plataforma.
+
+Uma revisão futura pode:
+
+* utilizar outro microcontrolador;
+* alterar dimensões;
+* modificar o layout físico;
+* adicionar periféricos;
+* criar novos protocolos;
+* introduzir novas interfaces.
+
+Mas deve preservar a ideia central:
+
+        O TECLADO PROCESSA SUAS PRÓPRIAS ENTRADAS.
+
+        O HOST CONSOME EVENTOS.
+
+        O HARDWARE OFERECE CAPACIDADES.
+
+        O FIRMWARE DEFINE COMPORTAMENTO.
+
+        A PLATAFORMA NÃO PERTENCE A UM ÚNICO HOST.
+
+
+================================================================================
+FIM DO DOCUMENTO
+
+MICRO KEYBOARD PLATFORM (MKP)
+PROJECT MANIFESTO
+Revision B
+26/08/2026
+================================================================================
