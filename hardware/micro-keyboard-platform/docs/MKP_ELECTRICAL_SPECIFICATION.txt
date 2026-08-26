@@ -1,0 +1,1613 @@
+================================================================================
+MICRO KEYBOARD PLATFORM (MKP)
+
+ELECTRICAL SPECIFICATION
+
+Revision B - Versão Final Consolidada
+Baseado no Concept Freeze de 13/07/2026
+
+Última atualização:
+13/07/2026
+
+Status:
+FROZEN - Liberado para desenvolvimento KiCad
+================================================================================
+
+
+1. OBJETIVO DO DOCUMENTO
+================================================================================
+
+Este documento define a especificação elétrica oficial da plataforma MKP.
+
+Ele serve como referência para:
+
+* Desenvolvimento do esquemático no KiCad.
+* Criação das net names.
+* Roteamento da PCB.
+* Desenvolvimento do firmware.
+* Validação elétrica do protótipo.
+
+Este documento representa o congelamento da arquitetura elétrica
+da Revision B.
+
+Alterações futuras deverão gerar uma nova revisão.
+
+
+================================================================================
+2. CONTROLADOR PRINCIPAL
+================================================================================
+
+MCU:
+
+RP2040-Zero Module
+
+Compatível com:
+
+* RP2040-Zero
+* Família RPXXXX-Zero
+* Módulos equivalentes baseados no RP2040
+
+
+Interfaces disponíveis:
+
+* USB HID
+* UART
+* I2C
+* SPI
+
+
+Alimentação:
+
+* Tensão lógica: 3.3V
+* Alimentação principal: VSYS / USB-C do módulo
+
+
+Regras:
+
+* A MKP não fornece alimentação ao host através do SJ1.
+* O conector SJ1 transporta somente sinais e GND.
+* O host deve possuir alimentação própria.
+* O módulo RP2040-Zero não possui circuito de carga de bateria.
+
+
+Corrente para periféricos:
+
+Não especificada.
+
+A MKP não deve alimentar cargas externas através dos pinos 3V3
+sem considerar a capacidade do regulador interno do módulo.
+
+
+================================================================================
+3. MAPA OFICIAL DE GPIO E DIREÇÃO ELÉTRICA
+================================================================================
+
+
+3.1 MATRIZ DO TECLADO
+--------------------------------------------------------------------------------
+
+A matriz utiliza:
+
+* 5 linhas
+* 10 colunas
+
+
+Capacidade elétrica:
+
+50 posições possíveis
+
+Implementação física:
+
+43 teclas
+
+
+--------------------------------------------------------------------------------
+LINHAS
+--------------------------------------------------------------------------------
+
+Configuração firmware:
+
+SAÍDA DIGITAL
+
+Durante a varredura:
+
+* Uma linha por vez é colocada em LOW.
+* As demais permanecem inativas.
+
+
+GPIO     NET NAME     FUNÇÃO
+-----    ---------    ----------------
+
+GP0      ROW0         Linha 0
+GP1      ROW1         Linha 1
+GP2      ROW2         Linha 2
+GP3      ROW3         Linha 3
+GP4      ROW4         Linha 4
+
+
+--------------------------------------------------------------------------------
+COLUNAS
+--------------------------------------------------------------------------------
+
+Configuração firmware:
+
+ENTRADA DIGITAL
+
+Pull-up:
+
+Habilitado internamente.
+
+
+GPIO     NET NAME     FUNÇÃO
+-----    ---------    ----------------
+
+GP5      COL0         Coluna 0
+GP6      COL1         Coluna 1
+GP7      COL2         Coluna 2
+GP8      COL3         Coluna 3
+GP9      COL4         Coluna 4
+GP10     COL5         Coluna 5
+GP11     COL6         Coluna 6
+GP12     COL7         Coluna 7
+GP13     COL8         Coluna 8
+GP14     COL9         Coluna 9
+
+
+
+================================================================================
+4. MAPA DA MATRIZ DE TECLAS
+================================================================================
+
+
+              COL0 COL1 COL2 COL3 COL4 COL5 COL6 COL7 COL8 COL9
+
+ROW0           1    2    3    4    5    6    7    8    9    0
+
+ROW1           Q    W    E    R    T    Y    U    I    O    P
+
+ROW2           A    S    D    F    G    H    J    K    L    ENT
+
+ROW3           FN   CAPS  Z    X    C    V    B    N    M    CTRL
+
+ROW4           L    --   --   --   SPACE --   --   --   --   R
+
+
+Posições:
+
+"--"
+
+Representam:
+
+* Ausência de switch físico.
+* Devem ser tratadas como KC_NO no firmware.
+
+
+Observações:
+
+Os botões L e R:
+
+* pertencem eletricamente à ROW4;
+* possuem posição física na Service Bay;
+* utilizam a mesma lógica da matriz principal.
+
+
+
+================================================================================
+5. CONFIGURAÇÃO DOS DIODOS E MÉTODO DE VARREDURA
+================================================================================
+
+
+Tipo recomendado:
+
+1N4148 SMD
+
+Footprint:
+
+SOD-123
+
+
+Alternativa:
+
+BAT54S
+
+Footprint:
+
+SOT-23
+
+
+Observação:
+
+BAT54S é permitido apenas para protótipos.
+
+Possui maior corrente de fuga e pode causar leituras falsas
+em matrizes maiores.
+
+
+--------------------------------------------------------------------------------
+5.1 ORIENTAÇÃO DOS DIODOS
+--------------------------------------------------------------------------------
+
+
+Orientação elétrica:
+
+
+ROW ----|>|---- COL
+
+
+Onde:
+
+
+Ânodo:
+
+* lado sem marcação;
+* conectado à ROW.
+
+
+Cátodo:
+
+* lado com faixa;
+* conectado à COL.
+
+
+Cada tecla possui:
+
+* um switch;
+* um diodo dedicado.
+
+
+O diodo deve ser montado individualmente junto ao switch.
+
+
+--------------------------------------------------------------------------------
+5.2 MÉTODO DE VARREDURA
+--------------------------------------------------------------------------------
+
+
+Sequência:
+
+1. Firmware configura ROW como saída.
+2. Firmware configura COL como entrada com pull-up.
+3. Uma ROW é colocada em LOW.
+4. COLs são lidas.
+5. Processo é repetido para todas as ROWs.
+
+
+Estados:
+
+
+COL = LOW
+
+Tecla pressionada.
+
+
+COL = HIGH
+
+Tecla liberada.
+
+
+Compatibilidade:
+
+* QMK
+* KMK
+* CircuitPython HID
+
+
+A polaridade dispensa inversão lógica no firmware.
+
+
+================================================================================
+6. INTERFACE HOST (SJ1)
+================================================================================
+
+
+Conector:
+
+SJ1
+
+Tipo:
+
+Header macho 1x5
+
+Pitch:
+
+2.54 mm
+
+
+Função:
+
+Interface física entre a MKP e um sistema hospedeiro.
+
+
+O SJ1 transporta:
+
+* Comunicação.
+* Referência elétrica GND.
+
+
+O SJ1 NÃO transporta:
+
+* Alimentação 5V.
+* Alimentação 3.3V.
+
+
+--------------------------------------------------------------------------------
+6.1 PINAGEM SJ1
+--------------------------------------------------------------------------------
+
+
+PINO       FUNÇÃO
+----       -----------------
+
+1          HOST_SIG1
+
+2          HOST_SIG2
+
+3          HOST_SIG3
+
+4          HOST_SIG4
+
+5          GND
+
+
+
+Regra obrigatória:
+
+SJ1_PIN5 deve sempre estar conectado ao GND do sistema hospedeiro.
+
+
+
+================================================================================
+7. MAPEAMENTO DOS SINAIS HOST
+================================================================================
+
+
+Os GPIOs destinados à comunicação são fisicamente separados
+da matriz do teclado.
+
+
+Nenhum GPIO de comunicação é compartilhado com ROW ou COL.
+
+
+--------------------------------------------------------------------------------
+7.1 GPIO HOST
+--------------------------------------------------------------------------------
+
+
+GPIO      NET NAME       FUNÇÃO
+
+-----     ----------     --------------------------------------------
+
+
+GP15      HOST_SIG1      UART:
+                         TX da MKP (saída)
+
+                         SPI:
+                         MOSI do escravo (entrada)
+
+
+GP26      HOST_SIG2      UART:
+                         RX da MKP (entrada)
+
+                         SPI:
+                         MISO do escravo (saída)
+
+
+GP27      HOST_SIG3      I2C:
+                         SDA bidirecional
+
+                         SPI:
+                         SCK do escravo (entrada)
+
+
+GP28      HOST_SIG4      I2C:
+                         SCL (clock recebido do mestre)
+
+                         SPI:
+                         CS do escravo (entrada)
+
+
+
+================================================================================
+8. MODOS DE COMUNICAÇÃO
+================================================================================
+
+
+A MKP pode operar como periférico utilizando:
+
+
+* UART
+* I2C
+* SPI
+
+
+
+================================================================================
+8.1 UART
+================================================================================
+
+
+Direção:
+
+
+MKP TX  --->  RX Host
+
+MKP RX  <---  TX Host
+
+
+
+Mapeamento:
+
+
+SJ1.1:
+
+GP15 / HOST_SIG1
+
+(TX da MKP)
+
+
+SJ1.2:
+
+GP26 / HOST_SIG2
+
+(RX da MKP)
+
+
+
+SJ1.3:
+
+Não utilizado
+
+
+SJ1.4:
+
+Não utilizado
+
+
+
+================================================================================
+8.2 I2C
+================================================================================
+
+
+Direção:
+
+
+Host como mestre.
+
+MKP como dispositivo escravo.
+
+
+Mapeamento:
+
+
+SJ1.1:
+
+GP27 / HOST_SIG3
+
+SDA
+
+
+SJ1.2:
+
+GP28 / HOST_SIG4
+
+SCL
+
+
+
+Observação:
+
+Pull-ups I2C:
+
+* Devem ser fornecidos pelo host;
+ou
+* Podem ser adicionados externamente na PCB caso necessário.
+
+
+SJ1.3:
+
+Não utilizado
+
+
+SJ1.4:
+
+Não utilizado
+
+
+
+================================================================================
+8.3 SPI
+================================================================================
+
+
+Direção:
+
+
+Host:
+
+MASTER
+
+
+MKP:
+
+SLAVE
+
+
+
+Mapeamento:
+
+
+SJ1.1:
+
+GP15 / HOST_SIG1
+
+MOSI do host
+entrada na MKP
+
+
+SJ1.2:
+
+GP26 / HOST_SIG2
+
+MISO da MKP
+saída para host
+
+
+SJ1.3:
+
+GP27 / HOST_SIG3
+
+SCK do host
+entrada na MKP
+
+
+SJ1.4:
+
+GP28 / HOST_SIG4
+
+CS do host
+entrada na MKP
+
+
+
+================================================================================
+9. ÁREA PROTO
+================================================================================
+
+
+Objetivo:
+
+Selecionar fisicamente o protocolo utilizado pela interface SJ1.
+
+
+Método:
+
+Configuração através de:
+
+* Solder bridges;
+ou
+* Resistores 0Ω.
+
+
+Footprint recomendado:
+
+0603 ou 0805
+
+
+
+================================================================================
+9.1 REGRAS DE CONFIGURAÇÃO
+================================================================================
+
+
+* Apenas um protocolo deve permanecer fechado.
+* Nunca montar múltiplas rotas simultaneamente.
+* Alteração de protocolo exige placa desligada.
+* A configuração é permanente durante operação.
+
+
+Os elementos PROTO são componentes de configuração
+de hardware.
+
+
+Não devem ser alterados durante funcionamento.
+
+
+
+================================================================================
+9.2 IDENTIFICAÇÃO DE PROTOCOLO VIA ADC
+================================================================================
+
+
+GPIO:
+
+GP29
+
+
+NET NAME:
+
+PROTO_ADC
+
+
+
+Objetivo:
+
+Permitir que o firmware identifique automaticamente
+qual configuração física foi montada.
+
+
+
+================================================================================
+10. CIRCUITO ADC DE CONFIGURAÇÃO
+================================================================================
+
+
+Circuito:
+
+
+              3V3
+
+               |
+
+              10k
+
+               |
+
+               +---------- GP29
+
+               |
+
+              100nF
+
+               |
+
+              GND
+
+
+
+GP29 possui também:
+
+
+Jumpers:
+
+A = resistor 1k
+
+B = resistor 2k
+
+
+Conectados ao GND.
+
+
+
+================================================================================
+10.1 FILTRO ADC
+================================================================================
+
+
+Componente:
+
+C1 = 100nF
+
+
+Ligação:
+
+
+GP29 ---- C1 ---- GND
+
+
+
+Posicionamento:
+
+O capacitor deve ficar próximo ao pino GP29 do RP2040.
+
+
+
+================================================================================
+10.2 TABELA DE CONFIGURAÇÃO ADC
+================================================================================
+
+
+JUMPER A     JUMPER B      TENSÃO       MODO
+
+---------    ---------     --------     ----------------
+
+
+Aberto       Aberto        ~3.3V        UART padrão
+
+
+Fechado      Aberto        ~0.30V       I2C
+
+
+Aberto       Fechado       ~0.55V       SPI
+
+
+Fechado      Fechado       ~0V          Modo Configuração
+
+
+
+Cálculo aproximado:
+
+
+I2C:
+
+
+3.3V x 1k / (10k + 1k)
+
+≈ 0.30V
+
+
+
+SPI:
+
+
+3.3V x 2k / (10k + 2k)
+
+≈ 0.55V
+
+
+
+================================================================================
+10.3 MODO CONFIGURAÇÃO
+================================================================================
+
+
+O estado:
+
+
+A fechado
+
+B fechado
+
+
+não executa bootloader físico.
+
+
+Função:
+
+
+Indicar ao firmware um modo especial de configuração.
+
+
+O bootloader real do RP2040 continua sendo acessado através:
+
+
+* Botão BOOT do módulo;
+ou
+* Procedimento USB padrão RP2040.
+
+
+================================================================================
+11. ÁREA EXPANSÃO
+================================================================================
+
+
+Objetivo:
+
+Permitir futuras expansões sem alterar a PCB principal.
+
+
+Sinais disponíveis:
+
+
+* +3V3
+* GND
+* GP29 / PROTO_ADC
+
+
+
+Aplicações previstas:
+
+
+* Encoder rotativo.
+* Sensores.
+* Displays.
+* Interfaces auxiliares.
+
+
+
+================================================================================
+11.1 REGRA DE USO GP29
+================================================================================
+
+
+GP29 somente pode ser utilizado como expansão quando:
+
+
+[ ] PROTO não utiliza ADC de configuração.
+
+[ ] Jumpers A e B estão abertos.
+
+[ ] Firmware ignora leitura ADC.
+
+[ ] Firmware configura GP29 como GPIO normal.
+
+
+
+Caso contrário:
+
+O divisor resistivo permanece conectado
+e interfere eletricamente no sinal.
+
+
+
+================================================================================
+12. ALIMENTAÇÃO
+================================================================================
+
+
+Fonte principal prevista:
+
+
+USB-C do módulo RP2040-Zero.
+
+
+
+Tensões:
+
+
++5V:
+
+VSYS / VUSB
+
+
++3V3:
+
+Regulador interno do módulo.
+
+
+
+================================================================================
+12.1 REGRAS DE ALIMENTAÇÃO
+================================================================================
+
+
+A MKP:
+
+
+NÃO possui:
+
+* carregador de bateria;
+* gerenciamento de energia;
+* alimentação do host.
+
+
+
+A MKP:
+
+
+NÃO deve fornecer:
+
+
++5V através do SJ1.
+
+
+
+================================================================================
+12.2 ALIMENTAÇÃO EXTERNA
+================================================================================
+
+
+Fontes externas futuras são permitidas somente
+através de projeto específico.
+
+
+Devem incluir:
+
+
+* proteção contra retorno de corrente;
+* isolamento adequado;
+* dimensionamento do regulador.
+
+
+Recomendação:
+
+Diodo Schottky em série quando aplicável.
+
+
+
+================================================================================
+12.3 CORRENTE DISPONÍVEL
+================================================================================
+
+
+A capacidade do regulador 3V3 do módulo
+não deve ser assumida como fonte auxiliar.
+
+
+Recomendação:
+
+Não exceder aproximadamente 100mA
+para cargas externas sem análise térmica.
+
+
+
+================================================================================
+13. NET NAMES OFICIAIS DO PROJETO
+================================================================================
+
+
+Os nomes abaixo devem ser utilizados no esquemático KiCad
+e mantidos durante todo o desenvolvimento.
+
+
+================================================================================
+13.1 MATRIZ DO TECLADO
+================================================================================
+
+
+LINHAS:
+
+ROW0
+ROW1
+ROW2
+ROW3
+ROW4
+
+
+COLUNAS:
+
+COL0
+COL1
+COL2
+COL3
+COL4
+COL5
+COL6
+COL7
+COL8
+COL9
+
+
+
+================================================================================
+13.2 INTERFACE HOST
+================================================================================
+
+
+HOST_SIG1
+
+HOST_SIG2
+
+HOST_SIG3
+
+HOST_SIG4
+
+
+
+================================================================================
+13.3 CONFIGURAÇÃO
+================================================================================
+
+
+PROTO_ADC
+
+
+
+================================================================================
+13.4 ALIMENTAÇÃO
+================================================================================
+
+
++3V3
+
++5V
+
+GND
+
+
+
+================================================================================
+14. REGRAS DE PROJETO PCB
+================================================================================
+
+
+A PCB deve seguir a filosofia:
+
+
+Mechanical Layout First
+
+
+A ergonomia e posicionamento mecânico
+definem o projeto elétrico.
+
+
+================================================================================
+14.1 SEPARAÇÃO DE DOMÍNIOS
+================================================================================
+
+
+A PCB possui três domínios físicos:
+
+
+1. Keyboard Area
+
+Contém:
+
+* Switches.
+* Diodos.
+
+
+Não deve conter:
+
+* Resistores.
+* Capacitores.
+* Jumpers.
+* Componentes de configuração.
+
+
+
+------------------------------------------------------------
+
+
+2. Free Routing Corridor
+
+Faixa livre de componentes.
+
+
+Função:
+
+Passagem das linhas da matriz:
+
+
+* ROW0 ~ ROW4
+* COL0 ~ COL9
+
+
+Objetivo:
+
+Facilitar roteamento e futuras revisões.
+
+
+
+------------------------------------------------------------
+
+
+3. Service Bay
+
+Contém:
+
+
+* RP2040-Zero.
+* USB-C.
+* Área PROTO.
+* Área EXP.
+* Configuração ADC.
+* Botões L/R.
+
+
+
+================================================================================
+14.2 REGRAS ELÉTRICAS
+================================================================================
+
+
+Obrigatório:
+
+
+* Matriz isolada da interface host.
+* Nenhum GPIO compartilhado.
+* PROTO fora da área do teclado.
+* Componentes de configuração somente na Service Bay.
+
+
+
+================================================================================
+14.3 ESTRATÉGIA DE CAMADAS PCB
+================================================================================
+
+
+Construção:
+
+
+FR-4
+
+2 camadas
+
+Espessura:
+
+1.6mm
+
+
+
+Camada superior:
+
+F.Cu
+
+
+Uso:
+
+* Componentes.
+* Sinais.
+* Roteamento principal.
+
+
+
+Camada inferior:
+
+B.Cu
+
+
+Uso:
+
+
+* Plano GND preferencialmente contínuo.
+* Trilhas auxiliares de alimentação.
+* Retorno de corrente.
+
+
+
+Benefícios:
+
+
+* Menor ruído.
+* Melhor integridade de sinal.
+* Fabricação simplificada.
+
+
+
+================================================================================
+14.4 REGRAS DE ROTEAMENTO
+================================================================================
+
+
+Grid recomendado:
+
+0.05mm ou 1 mil
+
+
+Clearance mínimo:
+
+
+Sinais:
+
+0.20mm
+
+
+Alimentação:
+
+0.30mm ou superior
+
+
+
+Largura de trilhas:
+
+
+Sinais:
+
+0.20mm
+
+
+Alimentação:
+
+0.40mm ou superior
+
+
+
+GND:
+
+Preferencialmente através de plano.
+
+
+
+================================================================================
+14.5 PLANO DE GND
+================================================================================
+
+
+Recomendações:
+
+
+* Evitar cortes no plano inferior.
+* Usar vias de costura próximas ao RP2040.
+* Manter retorno de corrente curto.
+* Evitar ilhas de GND isoladas.
+
+
+
+================================================================================
+15. CHECKLIST PARA INÍCIO DO KICAD
+================================================================================
+
+
+A ordem deve ser respeitada.
+
+
+================================================================================
+FASE 1 - BIBLIOTECA
+================================================================================
+
+
+[ ] Criar footprint RP2040-Zero
+
+Nome:
+
+MKP_RP2040_ZERO_MODULE
+
+
+[ ] Criar footprint switch teclado
+
+Nome:
+
+MKP_SWITCH_4.5x4.5
+
+
+[ ] Criar footprint botões L/R
+
+Nome:
+
+MKP_SWITCH_6x6
+
+
+[ ] Criar footprint diodo
+
+Nome:
+
+MKP_DIODE_SOD123
+
+
+[ ] Criar footprint resistores PROTO
+
+Nome:
+
+MKP_R_0603
+
+ou
+
+MKP_R_0805
+
+
+
+================================================================================
+FASE 2 - MODELO MECÂNICO
+================================================================================
+
+
+[ ] Definir dimensões finais da PCB.
+
+
+[ ] Posicionar teclas.
+
+
+[ ] Validar espaçamento.
+
+
+[ ] Criar mockup físico 1:1.
+
+
+[ ] Validar ergonomia antes do esquemático.
+
+
+
+================================================================================
+FASE 3 - ESQUEMÁTICO
+================================================================================
+
+
+[ ] Criar símbolo RP2040-Zero.
+
+
+[ ] Criar matriz 5x10.
+
+
+[ ] Definir net names oficiais.
+
+
+[ ] Inserir componentes PROTO.
+
+
+[ ] Inserir circuito ADC GP29.
+
+
+[ ] Inserir alimentação.
+
+
+
+================================================================================
+FASE 4 - VALIDAÇÃO
+================================================================================
+
+
+[ ] Executar ERC.
+
+
+[ ] Corrigir warnings relevantes.
+
+
+[ ] Revisar alimentação.
+
+
+[ ] Confirmar footprints.
+
+
+
+================================================================================
+FASE 5 - PCB
+================================================================================
+
+
+[ ] Importar componentes.
+
+
+[ ] Fazer placement.
+
+
+[ ] Roteamento matriz.
+
+
+[ ] Roteamento host.
+
+
+[ ] Criar plano GND.
+
+
+[ ] Executar DRC.
+
+
+[ ] Gerar Gerbers.
+
+
+
+================================================================================
+16. COMPATIBILIDADE DE FIRMWARE
+================================================================================
+
+
+A MKP foi projetada para funcionar com:
+
+
+* QMK.
+* KMK.
+* CircuitPython HID.
+* Firmware próprio baseado no SDK Raspberry Pi.
+
+
+
+O hardware permanece fixo.
+
+As diferenças de aplicação devem ser tratadas
+no firmware.
+
+
+
+================================================================================
+16.1 REQUISITOS MÍNIMOS
+================================================================================
+
+
+Firmware deve possuir:
+
+
+1.
+
+Matriz configurável:
+
+5 linhas x 10 colunas.
+
+
+
+2.
+
+Suporte:
+
+KC_NO
+
+para posições vazias.
+
+
+
+3.
+
+Leitura:
+
+PROTO_ADC durante inicialização.
+
+
+
+4.
+
+Configuração dinâmica:
+
+
+UART.
+
+I2C.
+
+SPI.
+
+
+
+5.
+
+Varredura:
+
+
+ROW ativo LOW.
+
+COL com pull-up.
+
+LOW = tecla pressionada.
+
+
+
+6.
+
+Debounce:
+
+
+5ms a 10ms recomendado.
+
+
+
+7.
+
+Suporte:
+
+FN.
+
+CAPS.
+
+CTRL.
+
+
+
+================================================================================
+16.2 RESPONSABILIDADES DO FIRMWARE
+================================================================================
+
+
+O firmware deve:
+
+
+* Inicializar periféricos.
+* Ler configuração PROTO.
+* Configurar comunicação.
+* Executar varredura da matriz.
+* Gerar eventos HID.
+* Gerenciar camadas de teclado.
+
+
+
+================================================================================
+16.3 MAPA HID INICIAL SUGERIDO
+================================================================================
+
+
+Layer 0:
+
+Teclado QWERTY padrão.
+
+
+
+Tecla FN:
+
+Ativa Layer 1.
+
+
+
+Layer FN:
+
+Sugestão:
+
+
+1 -> F1
+
+2 -> F2
+
+3 -> F3
+
+...
+
+0 -> F10
+
+
+
+Outras funções:
+
+Podem ser definidas pelo usuário.
+
+
+
+Este mapeamento não altera o hardware.
+
+
+
+================================================================================
+17. CONTROLE DE REVISÃO
+================================================================================
+
+
+Documento:
+
+MKP Electrical Specification
+
+
+
+Revisão:
+
+Revision B
+
+
+Status:
+
+FROZEN
+
+
+
+Data:
+
+13/07/2026
+
+
+
+Objetivo:
+
+Servir como fonte oficial para:
+
+
+* KiCad.
+* Firmware.
+* Testes.
+* Documentação.
+
+
+
+================================================================================
+18. CONCLUSÃO
+================================================================================
+
+
+Estado atual do projeto:
+
+
+[X] Arquitetura elétrica definida.
+
+[X] GPIOs definidos.
+
+[X] Matriz definida.
+
+[X] Comunicação definida.
+
+[X] Alimentação definida.
+
+[X] ADC de configuração definido.
+
+[X] Regras PCB definidas.
+
+[X] Firmware especificado.
+
+
+Próxima etapa:
+
+
+MKP Rev.B - KiCad Project Initialization
+
+
+
+Sequência:
+
+
+1. Biblioteca de footprints.
+
+2. Placement mecânico.
+
+3. Esquemático.
+
+4. ERC.
+
+5. PCB Layout.
+
+6. DRC.
+
+7. Gerbers.
+
+8. Protótipo.
+
+
+
+================================================================================
+FIM DO DOCUMENTO
+
+MKP - Revision B Electrical Specification
+
+STATUS: FROZEN
+================================================================================

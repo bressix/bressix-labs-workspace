@@ -1,0 +1,352 @@
+================================================================================
+MKP REV.B - CHECKLIST FINAL ANTES DO KiCad
+Revisão de consistência técnica
+================================================================================
+
+
+1. AJUSTE NA SEÇÃO 8.1 - CONECTOR SJ1
+--------------------------------------------------------------------------------
+
+STATUS:
+⚠ Pequena inconsistência documental
+
+
+PROBLEMA:
+
+O texto informa:
+
+"Conector Host (SJ1): Header macho 1x4"
+
+Porém a tabela da Área PROTO utiliza:
+
+Pino 1
+Pino 2
+Pino 3
+Pino 4
+Pino 5 = GND
+
+
+Ou seja:
+
+A documentação está descrevendo um conector de 5 pinos.
+
+
+CORREÇÃO RECOMENDADA:
+
+Alterar:
+
+"Header macho 1x4"
+
+para:
+
+"Header macho 1x5 (pitch 2.54mm)"
+
+ou alterar a tabela removendo o quinto pino.
+
+
+JUSTIFICATIVA:
+
+A pinagem atual exige:
+
+4 sinais + GND
+
+Total:
+5 vias.
+
+
+================================================================================
+
+
+2. GP29 COM DUPLA FUNÇÃO (PROTO + EXP)
+--------------------------------------------------------------------------------
+
+STATUS:
+⚠ Requer regra operacional mais explícita
+
+
+SITUAÇÃO:
+
+GP29 está sendo utilizado para:
+
+- ADC de seleção de protocolo;
+- expansão futura;
+- GPIO digital.
+
+
+Não existe conflito elétrico, porém existe conflito funcional.
+
+
+CORREÇÃO RECOMENDADA:
+
+Adicionar:
+
+"Quando a Área PROTO estiver configurada com jumpers ativos,
+o GP29 permanece reservado para leitura ADC.
+
+O uso como GPIO/EXP somente é permitido com os jumpers PROTO abertos."
+
+
+JUSTIFICATIVA:
+
+Evita conectar simultaneamente:
+
+ADC de configuração
++
+dispositivo externo.
+
+
+================================================================================
+
+
+3. BAT54S COMO SUBSTITUTO DO 1N4148
+--------------------------------------------------------------------------------
+
+STATUS:
+⚠ Revisar
+
+
+A documentação permite:
+
+- 1N4148 SMD
+- BAT54S
+
+
+Tecnicamente ambos funcionam, porém:
+
+1N4148:
+- diodo de sinal;
+- menor corrente de fuga;
+- comportamento previsível em matriz.
+
+
+BAT54S:
+- Schottky;
+- menor Vf;
+- maior corrente de fuga.
+
+
+RECOMENDAÇÃO:
+
+Definir:
+
+PADRÃO:
+1N4148 SMD SOD-123
+
+
+OPCIONAL:
+BAT54S apenas como alternativa experimental.
+
+
+JUSTIFICATIVA:
+
+Matrizes de teclado normalmente utilizam diodos de sinal.
+A corrente de fuga do Schottky pode causar problemas em matrizes maiores.
+
+
+================================================================================
+
+
+4. ALIMENTAÇÃO DO RP2040-ZERO
+--------------------------------------------------------------------------------
+
+STATUS:
+⚠ Melhorar documentação
+
+
+O documento informa:
+
+"VSYS (5V) conectado diretamente ao VUSB"
+
+
+Sugestão:
+
+Adicionar:
+
+"A alimentação via USB-C permanece responsabilidade do módulo
+RP2040-Zero. A MKP não deve criar caminhos alternativos entre
+USB, VSYS e fontes externas sem proteção."
+
+
+JUSTIFICATIVA:
+
+Evita futuras revisões adicionando bateria ou alimentação externa
+sem considerar backfeed.
+
+
+================================================================================
+
+
+5. DEFINIÇÃO DO FOOTPRINT DO RP2040-ZERO
+--------------------------------------------------------------------------------
+
+STATUS:
+✅ Correto
+
+
+Porém adicionar:
+
+- posição dos furos mecânicos;
+- distância entre headers;
+- altura máxima permitida.
+
+
+JUSTIFICATIVA:
+
+O módulo é o componente mais crítico da Service Bay.
+
+
+================================================================================
+
+
+6. MATRIZ ELÉTRICA - CRIAR NET NAMES OFICIAIS
+--------------------------------------------------------------------------------
+
+STATUS:
+⚠ Próxima etapa obrigatória
+
+
+Antes do schematic criar:
+
+ROW0
+ROW1
+ROW2
+ROW3
+ROW4
+
+COL0
+COL1
+COL2
+...
+COL9
+
+
+E:
+
+HOST_TX
+HOST_RX
+HOST_SDA
+HOST_SCL
+
+PROTO_ADC
+
+
+JUSTIFICATIVA:
+
+Evita nomes automáticos do KiCad:
+
+Net-(U1-GP0)
+Net-(D32-K)
+
+e facilita manutenção.
+
+
+================================================================================
+
+
+7. REVISÃO DA FILOSOFIA "NENHUM COMPONENTE NA KEYBOARD AREA"
+--------------------------------------------------------------------------------
+
+STATUS:
+⚠ Ajuste conceitual
+
+
+Existe uma exceção:
+
+Os diodos estão fisicamente na Keyboard Area.
+
+
+Alterar:
+
+"Nenhum componente eletrônico"
+
+
+para:
+
+"Nenhum componente ativo ou de configuração"
+
+
+JUSTIFICATIVA:
+
+Os diodos fazem parte da própria matriz.
+
+
+================================================================================
+
+
+8. TESTE DE ROTEAMENTO ANTES DO PCB FINAL
+--------------------------------------------------------------------------------
+
+STATUS:
+Recomendado
+
+
+Antes de fabricar:
+
+Fazer um placement preliminar:
+
+
+- RP2040-Zero;
+- 43 switches;
+- 43 diodos;
+- conectores.
+
+
+Executar:
+
+- ratsnest;
+- comprimento das trilhas;
+- cruzamentos.
+
+
+JUSTIFICATIVA:
+
+A arquitetura parece roteável, mas a confirmação deve ocorrer
+no ambiente real do KiCad.
+
+
+================================================================================
+
+
+CONCLUSÃO
+--------------------------------------------------------------------------------
+
+Estado atual:
+
+ARQUITETURA:
+        ✅ Congelada
+
+MECÂNICA:
+        ✅ Definida
+
+GPIO:
+        ✅ Definido
+
+Matriz:
+        ✅ Definida
+
+PROTO:
+        ✅ Definido
+        ⚠ Apenas revisar SJ1 e regra GP29
+
+ALIMENTAÇÃO:
+        ✅ Conceito correto
+
+DOCUMENTAÇÃO:
+        ✅ Pronta para virar especificação elétrica
+
+
+Próxima etapa recomendada:
+
+MKP Rev.B - Electrical Specification
+
+seguido de:
+
+KiCad:
+1. Criar biblioteca/footprints
+2. Criar schematic
+3. Fazer placement mecânico
+4. Routing
+
+
+Nenhuma alteração estrutural adicional é necessária.
+================================================================================
